@@ -529,10 +529,12 @@ const WIN_CP = 100000;
 /** Format a mover-POV eval (cp) as "+1.4" or "+M5" / "-M3". */
 function formatEval(cp: number, isMate: boolean): string {
   if (isMate || Math.abs(cp) >= MATE_THRESHOLD) {
-    // distance encoded as |cp| - WIN_CP magnitude in the engine; approximate.
     const sign = cp >= 0 ? "+" : "-";
-    const dist = Math.max(1, Math.round(Math.abs(Math.abs(cp) - WIN_CP)) || 1);
-    return `${sign}M${dist}`;
+    // The engine's mate band doesn't encode a clean ply distance at this scale,
+    // so only show a number when it's plausible for Connect Four (≤ 42 plies);
+    // otherwise just "+M" / "−M".
+    const dist = Math.round(Math.abs(Math.abs(cp) - WIN_CP));
+    return dist >= 1 && dist <= 42 ? `${sign}M${dist}` : `${sign}M`;
   }
   const v = cp / 100;
   const sign = v >= 0 ? "+" : "";

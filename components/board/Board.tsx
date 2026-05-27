@@ -9,6 +9,7 @@ import {
   type Coord,
   type Player,
 } from "@/engine/types";
+import { playDrop, playWin } from "@/lib/sound";
 import styles from "./Board.module.css";
 
 export type BoardSize = "sm" | "md" | "lg";
@@ -37,6 +38,8 @@ export interface BoardProps {
   disabled?: boolean;
   /** Animate the most recently added disc falling into place. */
   animateDrops?: boolean;
+  /** Play drop/win sounds when discs land (opt-in; live games only). */
+  sound?: boolean;
   className?: string;
   "aria-label"?: string;
 }
@@ -75,6 +78,7 @@ export function Board({
   onDrop,
   disabled = false,
   animateDrops = true,
+  sound = false,
   className,
   "aria-label": ariaLabel,
 }: BoardProps) {
@@ -83,9 +87,10 @@ export function Board({
   const [newDisc, setNewDisc] = useState<Coord | null>(null);
 
   useEffect(() => {
-    if (animateDrops) {
-      const added = findNewDisc(prevRef.current, cells);
-      if (added) {
+    const added = findNewDisc(prevRef.current, cells);
+    if (added) {
+      if (sound) playDrop();
+      if (animateDrops) {
         setNewDisc(added);
         const t = setTimeout(() => setNewDisc(null), 480);
         prevRef.current = cells;
@@ -93,7 +98,15 @@ export function Board({
       }
     }
     prevRef.current = cells;
-  }, [cells, animateDrops]);
+  }, [cells, animateDrops, sound]);
+
+  // Win chime when the winning line first appears.
+  const hadWinRef = useRef(false);
+  useEffect(() => {
+    const hasWin = (winLine?.length ?? 0) > 0;
+    if (hasWin && !hadWinRef.current && sound) playWin();
+    hadWinRef.current = hasWin;
+  }, [winLine, sound]);
 
   const interactive = Boolean(onDrop) && !disabled;
   const winSet = useMemo(

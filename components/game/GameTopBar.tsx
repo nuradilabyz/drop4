@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { Logo } from "@/components/ui/Logo";
+import { SoundToggle } from "@/components/SoundToggle";
 import styles from "./GameTopBar.module.css";
 
 export interface GameTopBarProps {
@@ -51,6 +52,7 @@ export function GameTopBar({
           aria-label="Settings"
           onClick={onSettings}
         />
+        <SoundToggle size={30} />
         <div className={styles.divider} />
         <Button
           variant="secondary"

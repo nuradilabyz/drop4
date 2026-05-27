@@ -42,6 +42,8 @@ export interface GameViewBoardProps {
   disabled?: boolean;
   onDrop?: (col: number) => void;
   showColLabels?: boolean;
+  /** Play drop/win sounds (defaults on for live games). */
+  sound?: boolean;
 }
 
 export interface GameViewProps {
@@ -125,6 +127,7 @@ export function GameView({
               disabled={board.disabled}
               onDrop={board.onDrop}
               ghosting={finished}
+              sound={board.sound ?? true}
             />
             {board.hintCol != null && (
               <div className={styles.hintHint} aria-hidden="true">
