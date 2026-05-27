@@ -40,5 +40,14 @@
   }
   .left {
     gap: 12px;
+    min-width: 0;
+  }
+  .right {
+    gap: 4px;
+  }
+  /* Reclaim space — the board makes the mode obvious. */
+  .slash,
+  .mode {
+    display: none;
   }
 }
