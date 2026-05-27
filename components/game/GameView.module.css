@@ -1,0 +1,77 @@
+.shell {
+  display: grid;
+  grid-template-rows: 64px 1fr;
+  min-height: 100dvh;
+}
+
+.area {
+  display: grid;
+  grid-template-columns: 300px 1fr 300px;
+  gap: 28px;
+  padding: 32px 28px 48px;
+  align-items: center;
+}
+
+.sideLeft,
+.sideRight {
+  align-self: center;
+}
+
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  min-width: 0;
+}
+
+.boardWrap {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+/* Soft column tint behind the engine-suggested move. */
+.hintHint {
+  position: absolute;
+  bottom: -34px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--gold);
+  background: color-mix(in oklab, var(--gold) 12%, transparent);
+  border: 1px solid color-mix(in oklab, var(--gold) 30%, transparent);
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+  animation: drop4-pulse 1.2s var(--ease) infinite;
+}
+
+/* ── Tablet: shrink side rails. ── */
+@media (max-width: 1080px) {
+  .area {
+    grid-template-columns: 240px 1fr 240px;
+    gap: 18px;
+    padding: 24px 18px 40px;
+  }
+}
+
+/* ── Mobile: stack. Board first, then both panes compacted. ── */
+@media (max-width: 860px) {
+  .area {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 20px 14px 96px;
+    align-items: stretch;
+  }
+  .center {
+    order: -1;
+  }
+  .sideLeft,
+  .sideRight {
+    max-width: 480px;
+    width: 100%;
+    margin: 0 auto;
+  }
+}

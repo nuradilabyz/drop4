@@ -1,0 +1,60 @@
+.rail {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.rail[data-finished] {
+  margin-top: 12px;
+  gap: 10px;
+}
+
+.proTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 8px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: color-mix(in oklab, var(--gold) 14%, transparent);
+  color: var(--gold);
+}
+
+.budget {
+  margin-left: 6px;
+  font-size: 11px;
+  color: var(--text-mute);
+}
+
+.divider {
+  width: 1px;
+  height: 22px;
+  background: var(--border);
+  margin: 0 4px;
+}
+
+.status {
+  font-size: 12px;
+  color: var(--text-mute);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .rail {
+    margin-top: 20px;
+    gap: 8px;
+  }
+  .divider {
+    display: none;
+  }
+  .status {
+    width: 100%;
+    text-align: center;
+  }
+}

@@ -1,0 +1,155 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 18px;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.2px;
+}
+
+.filters {
+  display: flex;
+  gap: 4px;
+}
+
+.filter {
+  height: 20px;
+  padding: 0 9px;
+  font-size: 10.5px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  font-weight: 500;
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border-strong);
+  cursor: pointer;
+}
+
+.filterOn {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.timeline {
+  position: relative;
+  padding-left: 26px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.spine {
+  position: absolute;
+  left: 8px;
+  top: 4px;
+  bottom: 4px;
+  width: 1px;
+  background: var(--border);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.empty {
+  font-size: 12px;
+  color: var(--text-mute);
+  padding: 8px 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  position: relative;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+  color: inherit;
+}
+
+.row:hover {
+  background: var(--surface-2);
+}
+
+.rowCurrent {
+  background: var(--surface-2);
+  border-color: var(--coral);
+}
+
+.node {
+  position: absolute;
+  left: -22px;
+  top: 50%;
+  width: 13px;
+  height: 13px;
+  border-radius: 7px;
+  border: 2px solid var(--bg);
+  transform: translateY(-50%);
+}
+
+.rowCurrent .node {
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--coral) 25%, transparent);
+}
+
+.num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-mute);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 4px;
+}
+
+.move {
+  font-size: 13px;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.moveTagged {
+  color: var(--text);
+}
+
+.label {
+  color: var(--text-mute);
+  font-family: var(--font-sans);
+  margin-left: 8px;
+}
+
+.tag {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}

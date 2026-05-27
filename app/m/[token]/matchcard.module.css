@@ -1,0 +1,134 @@
+.main {
+  padding: 48px clamp(20px, 5vw, 56px) 96px;
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card {
+  width: 100%;
+  max-width: 1100px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: clamp(28px, 5vw, 64px);
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  padding: clamp(28px, 5vw, 56px);
+  box-shadow: var(--shadow);
+  animation: drop4-fade-up 0.4s var(--ease);
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.kicker {
+  font-size: 12px;
+  color: var(--text-mute);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.headline {
+  font-size: clamp(28px, 4.5vw, 44px);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -1.6px;
+  max-width: 18ch;
+}
+
+.versus {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 17px;
+}
+
+.player {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vs {
+  color: var(--text-mute);
+}
+
+.dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+}
+.coral {
+  background: var(--coral);
+}
+.aqua {
+  background: var(--aqua);
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: var(--r-chip);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+.statLabel {
+  font-size: 13px;
+  color: var(--text-mute);
+}
+
+.statValue {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.cta {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 4px;
+}
+
+.secondary {
+  font-size: 14px;
+  color: var(--text-dim);
+  transition: color 0.13s var(--ease);
+}
+.secondary:hover {
+  color: var(--text);
+}
+
+.boardWrap {
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 860px) {
+  .card {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+  .info {
+    align-items: center;
+  }
+  .headline {
+    max-width: none;
+  }
+}

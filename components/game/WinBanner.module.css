@@ -1,0 +1,33 @@
+.banner {
+  position: absolute;
+  top: -56px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  background: var(--text);
+  color: var(--bg);
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: var(--shadow);
+  animation: drop4-fade-up 0.32s var(--ease) both;
+  z-index: 5;
+}
+
+.banner[data-draw="true"] {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+}
+
+@media (max-width: 720px) {
+  .banner {
+    top: -46px;
+    font-size: 12px;
+    padding: 7px 14px;
+  }
+}

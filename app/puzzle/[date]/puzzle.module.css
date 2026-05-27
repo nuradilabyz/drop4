@@ -1,0 +1,140 @@
+.main {
+  padding: 40px clamp(20px, 5vw, 56px) 96px;
+}
+
+.wrap {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.solver {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ── Header ── */
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.headTop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.kicker {
+  font-size: 12px;
+  color: var(--text-mute);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+.title {
+  font-size: clamp(28px, 5vw, 40px);
+  font-weight: 700;
+  letter-spacing: -1.4px;
+  line-height: 1.05;
+}
+.sub {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--text-dim);
+  font-size: 15px;
+}
+.moverDot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+}
+.moverDot[data-mover="c"] {
+  background: var(--coral);
+}
+.moverDot[data-mover="a"] {
+  background: var(--aqua);
+}
+
+/* ── Board + feedback ── */
+.boardArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.feedback {
+  min-height: 24px;
+  font-size: 15px;
+  font-weight: 500;
+  transition: color 0.13s var(--ease);
+}
+.feedback[data-status="solved"] {
+  color: var(--gold);
+}
+.feedback[data-status="wrong"] {
+  color: var(--danger);
+}
+.feedback[data-status="playing"] {
+  color: var(--text-mute);
+}
+.fbRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Footer: streaks + actions ── */
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 18px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.streaks {
+  display: flex;
+  gap: 12px;
+}
+
+.statTile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 18px;
+  border-radius: var(--r-tile);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  min-width: 116px;
+}
+.statLabel {
+  font-size: 12px;
+  color: var(--text-mute);
+}
+.statValue {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+@media (max-width: 560px) {
+  .foot {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .actions {
+    justify-content: space-between;
+  }
+}
