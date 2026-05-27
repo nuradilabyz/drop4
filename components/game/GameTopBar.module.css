@@ -1,0 +1,44 @@
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 28px;
+  border-bottom: 1px solid var(--border);
+}
+.left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.slash {
+  color: var(--text-mute);
+  font-size: 12px;
+}
+.mode {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.divider {
+  width: 1px;
+  height: 22px;
+  background: var(--border);
+  margin: 0 4px;
+}
+@media (max-width: 640px) {
+  .bar {
+    height: 56px;
+    padding: 0 14px;
+  }
+  .left {
+    gap: 12px;
+  }
+}

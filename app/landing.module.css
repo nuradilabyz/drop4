@@ -1,0 +1,568 @@
+.main {
+  min-height: 100%;
+}
+
+.section {
+  padding: 40px clamp(20px, 5vw, 56px) 80px;
+}
+
+/* ─── Hero ──────────────────────────────────────────────────────────────── */
+.hero {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: clamp(32px, 5vw, 64px);
+  align-items: center;
+  padding: clamp(48px, 7vw, 88px) clamp(20px, 5vw, 56px) clamp(56px, 8vw, 96px);
+}
+
+.heroCopy {
+  min-width: 0;
+}
+
+.versionDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--coral);
+  margin-right: 2px;
+}
+
+.heroTitle {
+  font-size: clamp(40px, 6vw, 56px);
+  line-height: 1.0;
+  letter-spacing: -2.2px;
+  font-weight: 600;
+  margin: 24px 0 0;
+  color: var(--text);
+}
+
+.dim {
+  color: var(--text-dim);
+}
+
+.heroSub {
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--text-dim);
+  max-width: 480px;
+  margin: 24px 0 36px;
+}
+
+.heroCtas {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.onlinePill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 12px;
+  font-size: 13px;
+  color: var(--text-mute);
+}
+
+.onlineDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success);
+}
+
+.trust {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px;
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.trustValue {
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: -0.5px;
+  color: var(--text);
+}
+
+.trustLabel {
+  font-size: 12px;
+  color: var(--text-mute);
+  margin-top: 4px;
+}
+
+/* ─── Hero board ────────────────────────────────────────────────────────── */
+.heroBoardWrap {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.heroGlow {
+  position: absolute;
+  width: 380px;
+  height: 380px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in oklab, var(--coral) 15%, transparent) 0%, transparent 70%);
+  filter: blur(40px);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.heroBoardTilt {
+  position: relative;
+  transform: rotate(-2deg);
+}
+
+.floatCard {
+  position: absolute;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+.floatThinking {
+  top: -36px;
+  left: -120px;
+  padding: 10px 14px;
+  transform: rotate(4deg);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.floatName {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.floatMeta {
+  font-size: 11px;
+  color: var(--text-mute);
+}
+
+.thinkingDots {
+  display: flex;
+  gap: 2px;
+}
+
+.thinkingDots span {
+  width: 4px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--aqua);
+}
+
+.thinkingDots span:nth-child(2) {
+  opacity: 0.5;
+}
+
+.thinkingDots span:nth-child(3) {
+  opacity: 0.25;
+}
+
+.floatBest {
+  bottom: -28px;
+  right: -90px;
+  padding: 12px 14px;
+  transform: rotate(-3deg);
+  min-width: 180px;
+}
+
+.bestHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bestKicker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.bestValue {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.bestCol {
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -1px;
+}
+
+.bestScore {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.floatTurn {
+  position: absolute;
+  top: 100px;
+  right: -130px;
+  background: var(--text);
+  color: var(--bg);
+  border-radius: 10px;
+  padding: 8px 12px;
+  box-shadow: var(--shadow);
+  font-size: 12px;
+  transform: rotate(6deg);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ─── Section heads ─────────────────────────────────────────────────────── */
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.sectionTitle {
+  font-size: clamp(26px, 4vw, 32px);
+  letter-spacing: -1px;
+  font-weight: 600;
+}
+
+.sectionAside {
+  font-size: 13px;
+  color: var(--text-mute);
+}
+
+/* ─── Feature cards ─────────────────────────────────────────────────────── */
+.features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.featureCard {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.featurePreview {
+  height: 200px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.featureBody {
+  padding: 24px;
+  flex: 1;
+}
+
+.featureKicker {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 12px;
+}
+
+.featureTitle {
+  font-size: 19px;
+  letter-spacing: -0.4px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.featureText {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin-top: 10px;
+  line-height: 1.5;
+}
+
+/* feature previews */
+.aiPreview {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.aiBadge {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  background: var(--text);
+  color: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.aiLines {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.aiHi {
+  color: var(--text);
+}
+
+.coral {
+  color: var(--coral);
+}
+
+.linkPreview {
+  display: flex;
+  align-items: center;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px 4px 4px 14px;
+  font-size: 12px;
+  max-width: calc(100% - 32px);
+}
+
+.linkDim {
+  color: var(--text-mute);
+}
+
+.linkSlug {
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.linkCopy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 12px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 7px;
+  background: var(--text);
+  color: var(--bg);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.coachPreview {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.coachBar {
+  width: 6px;
+  border-radius: 3px;
+}
+
+.coachKey {
+  box-shadow: 0 0 12px var(--coral);
+}
+
+/* ─── City leaderboard ──────────────────────────────────────────────────── */
+.cityGrid {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: clamp(28px, 5vw, 56px);
+  align-items: center;
+}
+
+.cityTitle {
+  font-size: clamp(30px, 5vw, 40px);
+  letter-spacing: -1.4px;
+  line-height: 1.05;
+  font-weight: 600;
+  margin: 18px 0 0;
+}
+
+.cityText {
+  font-size: 16px;
+  color: var(--text-dim);
+  margin: 18px 0 28px;
+  line-height: 1.55;
+}
+
+.lbCard {
+  overflow: hidden;
+}
+
+.lbHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+}
+
+.lbCity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.lbToggle {
+  display: flex;
+  gap: 4px;
+}
+
+.chipBtn {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.lbRow {
+  display: grid;
+  grid-template-columns: 40px 1fr 100px 70px;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+}
+
+.lbSelf {
+  background: var(--surface-2);
+}
+
+.lbRank {
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.lbPlayer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.lbName {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.lbSelfName {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.lbElo {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* ─── Pro CTA ───────────────────────────────────────────────────────────── */
+.proCta {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: clamp(28px, 4vw, 44px) clamp(24px, 4vw, 48px);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 40px;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.proTitle {
+  font-size: clamp(24px, 4vw, 32px);
+  letter-spacing: -1px;
+  font-weight: 600;
+  line-height: 1.1;
+  margin-top: 16px;
+}
+
+.proSub {
+  font-size: 15px;
+  color: var(--text-dim);
+  margin-top: 12px;
+}
+
+.proButtons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.proPattern {
+  position: absolute;
+  right: -40px;
+  top: -40px;
+  opacity: 0.06;
+  pointer-events: none;
+}
+
+/* ─── Responsive ────────────────────────────────────────────────────────── */
+@media (max-width: 980px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .heroBoardWrap {
+    order: -1;
+  }
+
+  .features {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .cityGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .proCta {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+
+@media (max-width: 640px) {
+  .features {
+    grid-template-columns: 1fr;
+  }
+
+  .heroTitle {
+    letter-spacing: -1.4px;
+  }
+
+  .heroSub {
+    font-size: 16px;
+  }
+
+  /* Floating cards crowd the small viewport — hide the off-board ones. */
+  .floatThinking,
+  .floatTurn {
+    display: none;
+  }
+
+  .floatBest {
+    right: -8px;
+    bottom: -20px;
+  }
+}

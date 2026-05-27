@@ -1,0 +1,239 @@
+.main {
+  padding: 40px clamp(20px, 5vw, 56px) 64px;
+}
+
+/* ─── Header ────────────────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 32px;
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.name {
+  font-size: clamp(26px, 4vw, 32px);
+  font-weight: 600;
+  letter-spacing: -1px;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.metaItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dot {
+  opacity: 0.5;
+}
+
+.headerActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ─── Stat tiles ────────────────────────────────────────────────────────── */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+/* ─── Body grid ─────────────────────────────────────────────────────────── */
+.body {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.cardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 22px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.cardHeadFlat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.cardTitle {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.cardCount {
+  font-size: 11px;
+  color: var(--text-mute);
+}
+
+/* ─── Recent matches ────────────────────────────────────────────────────── */
+.matchRow {
+  display: grid;
+  grid-template-columns: 22px 1fr 100px 70px 70px 70px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 22px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.result {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+.win {
+  background: var(--coral);
+  color: #1a0f0a;
+}
+
+.loss {
+  background: var(--aqua);
+  color: #0a1a1d;
+}
+
+.matchPlayer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.matchName {
+  font-weight: 500;
+}
+
+.matchElo {
+  font-size: 11px;
+  color: var(--text-mute);
+}
+
+.matchMode {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.matchLen {
+  font-size: 12px;
+  color: var(--text-mute);
+}
+
+.matchWhen {
+  font-size: 12px;
+  color: var(--text-mute);
+}
+
+/* ─── Achievements ──────────────────────────────────────────────────────── */
+.achievements {
+  padding: 22px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.achievement {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+}
+
+.locked {
+  background: transparent;
+  opacity: 0.5;
+}
+
+.achievementIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.achievementName {
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.achievementSub {
+  font-size: 10px;
+  color: var(--text-mute);
+  margin-top: 2px;
+}
+
+/* ─── Responsive ────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .body {
+    grid-template-columns: 1fr;
+  }
+
+  .stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .matchRow {
+    grid-template-columns: 22px 1fr 56px;
+  }
+
+  .matchMode {
+    display: none;
+  }
+
+  .hideSm {
+    display: none;
+  }
+}

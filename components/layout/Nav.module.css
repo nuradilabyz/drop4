@@ -1,0 +1,64 @@
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px clamp(20px, 5vw, 56px);
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in oklab, var(--bg) 92%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 3vw, 36px);
+  min-width: 0;
+}
+
+.links {
+  display: flex;
+  gap: 2px;
+}
+
+.link {
+  padding: 6px 12px;
+  font-size: 13.5px;
+  color: var(--text-dim);
+  border-radius: var(--r-chip);
+  transition: color 0.13s var(--ease), background 0.13s var(--ease);
+}
+
+.link:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.active {
+  color: var(--text);
+  font-weight: 500;
+  background: var(--surface-2);
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Below the tablet breakpoint, drop the inline nav links to keep it tidy. */
+@media (max-width: 880px) {
+  .links {
+    display: none;
+  }
+}
+
+/* Under the mobile breakpoint the bottom tab bar takes over entirely. */
+@media (max-width: 640px) {
+  .nav {
+    display: none;
+  }
+}

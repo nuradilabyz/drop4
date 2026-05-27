@@ -1,0 +1,56 @@
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32px clamp(20px, 5vw, 56px) 40px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-mute);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  align-items: center;
+}
+
+.link {
+  color: var(--text-mute);
+  transition: color 0.13s var(--ease);
+}
+
+.link:hover {
+  color: var(--text);
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success);
+}
+
+/* Reserve room for the mobile tab bar so the footer isn't hidden behind it. */
+@media (max-width: 640px) {
+  .footer {
+    padding-bottom: 92px;
+    justify-content: center;
+    text-align: center;
+  }
+}

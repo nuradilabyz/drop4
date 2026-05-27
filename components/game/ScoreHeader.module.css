@@ -1,0 +1,38 @@
+.wrap {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+.side {
+  text-align: center;
+}
+.score {
+  font-family: var(--font-mono);
+  font-size: 38px;
+  font-weight: 500;
+  letter-spacing: -1.4px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.coral {
+  color: var(--coral);
+}
+.aqua {
+  color: var(--aqua);
+}
+.label {
+  font-size: 10px;
+  color: var(--text-mute);
+  margin-top: 4px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+.series {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--text-mute);
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
