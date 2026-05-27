@@ -1,0 +1,64 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.sm {
+  height: 20px;
+  padding: 0 7px;
+  font-size: 10.5px;
+  border-radius: 20px;
+}
+.md {
+  height: 24px;
+  padding: 0 8px;
+  font-size: 11px;
+  border-radius: 24px;
+}
+.lg {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+  border-radius: 28px;
+}
+
+.neutral {
+  background: var(--surface-2);
+  color: var(--text-dim);
+  border-color: var(--border);
+}
+.coral {
+  background: var(--coral-soft);
+  color: var(--coral);
+}
+.aqua {
+  background: var(--aqua-soft);
+  color: var(--aqua);
+}
+.gold {
+  background: transparent;
+  color: var(--gold);
+  border-color: var(--border-strong);
+}
+.success {
+  background: transparent;
+  color: var(--success);
+  border-color: var(--border);
+}
+.danger {
+  background: transparent;
+  color: var(--danger);
+  border-color: var(--border);
+}
+.outline {
+  background: transparent;
+  color: var(--text-dim);
+  border-color: var(--border-strong);
+}

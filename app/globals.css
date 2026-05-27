@@ -1,40 +1,101 @@
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Drop4 global stylesheet.
+ * Design tokens ported verbatim from the Claude Design export (tokens.jsx).
+ * Two co-equal themes via [data-theme] on <html>; switching flips one attribute,
+ * no React re-render. Colors are OKLCH (perceptually uniform, device-independent).
+ */
+
+:root[data-theme='light'] {
+  --bg: #f6f5f1; /* warm ivory */
+  --surface: #ffffff;
+  --surface-2: #ecebe5; /* recessed */
+  --surface-3: #f1efe9;
+  --border: rgba(20, 18, 14, 0.08);
+  --border-strong: rgba(20, 18, 14, 0.16);
+  --text: #181715;
+  --text-dim: rgba(24, 23, 21, 0.58);
+  --text-mute: rgba(24, 23, 21, 0.38);
+  --coral: oklch(0.68 0.19 25); /* player 1 */
+  --coral-soft: oklch(0.92 0.06 25);
+  --aqua: oklch(0.72 0.13 205); /* player 2 */
+  --aqua-soft: oklch(0.93 0.05 205);
+  --gold: oklch(0.78 0.13 75); /* pro / premium */
+  --danger: oklch(0.6 0.2 25);
+  --success: oklch(0.7 0.14 145);
+  --on-coral: #1a0f0a; /* readable text on coral fills */
+  --shadow: 0 1px 2px rgba(20, 18, 14, 0.06), 0 6px 24px rgba(20, 18, 14, 0.06);
+  --shadow-sm: 0 1px 0 rgba(20, 18, 14, 0.04), 0 1px 3px rgba(20, 18, 14, 0.06);
+  --scrim: rgba(20, 18, 14, 0.45);
+  color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root[data-theme='dark'] {
+  --bg: #0c0c0e;
+  --surface: #141417;
+  --surface-2: #1b1b1f;
+  --surface-3: #212126;
+  --border: rgba(255, 255, 250, 0.07);
+  --border-strong: rgba(255, 255, 250, 0.14);
+  --text: #f5f4ef;
+  --text-dim: rgba(245, 244, 239, 0.62);
+  --text-mute: rgba(245, 244, 239, 0.36);
+  --coral: oklch(0.74 0.18 28);
+  --coral-soft: oklch(0.32 0.1 28);
+  --aqua: oklch(0.78 0.13 200);
+  --aqua-soft: oklch(0.3 0.07 200);
+  --gold: oklch(0.82 0.13 78);
+  --danger: oklch(0.68 0.2 25);
+  --success: oklch(0.72 0.15 150);
+  --on-coral: #1a0f0a;
+  --shadow: 0 1px 0 rgba(0, 0, 0, 0.4), 0 12px 40px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 1px 0 rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.4);
+  --scrim: rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
+}
+
+/* Spacing + radius scales (also exported as TS constants in lib/tokens.ts). */
+:root {
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 22px;
+  --sp-6: 28px;
+  --sp-7: 40px;
+  --sp-8: 56px;
+  --r-chip: 8px;
+  --r-tile: 10px;
+  --r-swatch: 12px;
+  --r-block: 14px;
+  --r-card: 18px;
+  --r-mode: 22px;
+  --r-board: 24px;
+  --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 html {
   height: 100%;
-}
-
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-feature-settings: 'ss01', 'cv01';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
+  line-height: 1.55;
+  text-rendering: optimizeLegibility;
 }
 
 a {
@@ -42,8 +103,75 @@ a {
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
+button {
+  font-family: inherit;
+}
+
+::selection {
+  background: var(--coral);
+  color: var(--on-coral);
+}
+
+:focus-visible {
+  outline: 2px solid var(--coral);
+  outline-offset: 2px;
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+/* ── Motion ──────────────────────────────────────────────────────── */
+@keyframes drop4-drop {
+  0% {
+    transform: translateY(var(--drop-from, -480px));
+    animation-timing-function: cubic-bezier(0.45, 0, 0.7, 1);
+  }
+  70% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0.2, 0.6, 0.4, 1);
+  }
+  82% {
+    transform: translateY(-7%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes drop4-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@keyframes drop4-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes drop4-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
   }
 }

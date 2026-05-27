@@ -1,66 +1,52 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+import Link from "next/link";
+import { Button } from "@/components/ui/Button";
+import { Chip } from "@/components/ui/Chip";
+import { Icon } from "@/components/ui/Icon";
+import { Logo } from "@/components/ui/Logo";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
+// Placeholder landing — the full marketing landing is built in P1-C.
 export default function Home() {
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <main
+      style={{
+        minHeight: "100dvh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 24,
+        padding: 24,
+        textAlign: "center",
+      }}
+    >
+      <div style={{ position: "fixed", top: 20, right: 20 }}>
+        <ThemeToggle />
+      </div>
+      <Logo size={34} />
+      <Chip tone="coral" size="md" icon={<Icon name="spark" size={12} />}>
+        v0.9 · Now with AI Coach
+      </Chip>
+      <h1 style={{ fontSize: 56, fontWeight: 600, letterSpacing: -2.2, lineHeight: 1.05, maxWidth: 560 }}>
+        Four in a row.
+        <br />
+        Sharper every drop.
+      </h1>
+      <p style={{ color: "var(--text-dim)", maxWidth: 460, fontSize: 15 }}>
+        A modern arena for the oldest tactical duel. Challenge a friend by link, drill against an AI
+        that explains its moves, or climb your city&apos;s board.
+      </p>
+      <div style={{ display: "flex", gap: 10 }}>
+        <Button variant="coral" size="lg" href="/play" iconRight={<Icon name="arrow" size={16} />}>
+          Play now
+        </Button>
+        <Button variant="outline" size="lg" href="/playground">
+          Design system
+        </Button>
+      </div>
+      <Link href="/playground" style={{ fontSize: 12, color: "var(--text-mute)" }}>
+        Drop4 · component playground
+      </Link>
+    </main>
   );
 }

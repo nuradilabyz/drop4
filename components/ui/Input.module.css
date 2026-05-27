@@ -1,0 +1,36 @@
+.wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 40px;
+  padding: 0 4px 0 14px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-tile);
+  transition: border-color 0.13s var(--ease);
+}
+.wrap:focus-within {
+  border-color: var(--coral);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: -0.2px;
+}
+.input::placeholder {
+  color: var(--text-mute);
+}
+
+.lead {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-mute);
+}

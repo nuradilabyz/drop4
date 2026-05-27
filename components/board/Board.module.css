@@ -1,0 +1,110 @@
+.board {
+  position: relative;
+  width: min(100%, var(--board-max));
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-board);
+  padding: var(--board-pad);
+  box-shadow: var(--shadow-sm);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--cell-gap);
+}
+
+.cell {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--bg);
+  position: relative;
+  box-shadow:
+    inset 0 1px 2px var(--border),
+    inset 0 -1px 2px rgba(255, 255, 255, 0.04);
+}
+
+.disc {
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+  background: var(--disc);
+  box-shadow:
+    inset 0 -3px 0 rgba(0, 0, 0, 0.15),
+    inset 0 2px 0 rgba(255, 255, 255, 0.18);
+}
+
+.disc.dim {
+  opacity: 0.35;
+}
+
+.disc.win {
+  box-shadow:
+    0 0 0 3px var(--surface-2),
+    0 0 0 5px var(--disc),
+    0 0 24px var(--disc);
+  z-index: 2;
+}
+
+.dropping {
+  animation: drop4-drop 0.44s var(--ease) both;
+}
+
+.ghost {
+  position: absolute;
+  inset: 12%;
+  border-radius: 50%;
+  background: var(--disc);
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+.threat {
+  position: absolute;
+  inset: 12%;
+  border-radius: 50%;
+  border: 2px dashed var(--danger);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Column-wide hit zones layered over the grid. */
+.cols {
+  position: absolute;
+  inset: var(--board-pad);
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--cell-gap);
+  z-index: 3;
+}
+
+.colzone {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s var(--ease);
+}
+.colzone:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--text) 4%, transparent);
+}
+.colzone:disabled {
+  cursor: default;
+}
+
+.labels {
+  position: absolute;
+  bottom: -22px;
+  left: var(--board-pad);
+  right: var(--board-pad);
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--cell-gap);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-mute);
+  text-align: center;
+}
