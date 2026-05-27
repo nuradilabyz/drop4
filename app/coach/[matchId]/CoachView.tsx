@@ -63,6 +63,24 @@ type LoadState =
   | { status: "error"; message: string }
   | { status: "ready"; match: StoredMatch; data: ApiResponse };
 
+/**
+ * Coerce the `players` field into the { c, a } shape the coach expects.
+ * The solo/duel matchStore persists `players` as an ordered array
+ * [player1 ('c'), player2 ('a')]; older/other records may already be { c, a }.
+ */
+function normalizePlayers(p: unknown): { c: PlayerMeta; a: PlayerMeta } {
+  const fallback = { c: { name: "You" }, a: { name: "Opponent" } };
+  if (!p) return fallback;
+  if (Array.isArray(p)) {
+    return {
+      c: (p[0] as PlayerMeta) ?? fallback.c,
+      a: (p[1] as PlayerMeta) ?? fallback.a,
+    };
+  }
+  const o = p as { c?: PlayerMeta; a?: PlayerMeta };
+  return { c: o.c ?? fallback.c, a: o.a ?? fallback.a };
+}
+
 /** Read a finished match from localStorage. */
 function readLocalMatch(id: string): StoredMatch | null {
   if (typeof window === "undefined") return null;
@@ -71,7 +89,7 @@ function readLocalMatch(id: string): StoredMatch | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as StoredMatch;
     if (!Array.isArray(parsed.movelist) || parsed.movelist.length === 0) return null;
-    return parsed;
+    return { ...parsed, players: normalizePlayers((parsed as { players?: unknown }).players) };
   } catch {
     return null;
   }

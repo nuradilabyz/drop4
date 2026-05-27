@@ -1,6 +1,9 @@
 .board {
   position: relative;
-  width: min(100%, var(--board-max));
+  /* Definite width (so shrink-wrapping parents like centered flex columns don't
+     collapse the board to min-content), capped to the container on small screens. */
+  width: var(--board-max);
+  max-width: 100%;
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--r-board);
