@@ -1,36 +1,95 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Drop4 — *Four in a row. Sharper every drop.*
 
-## Getting Started
+A modern, competitive web platform for Connect Four. Not another clone — a startup-grade product: play a friend by link, drill against an AI **that explains your mistakes**, climb your **city's** ladder, and go Pro.
 
-First, run the development server:
+**Live demo:** _add your Vercel URL here_ · **Repo:** https://github.com/nuradilabyz/drop4
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## Что это, для кого и почему ценно
+
+- **Что:** «Четыре в ряд» как живой сервис — Solo против ИИ (4 уровня), Duel по ссылке (реалтайм), Ranked с ELO, городские лидерборды, ежедневные головоломки и **AI-тренер**, который после партии на человеческом языке объясняет, где ты ошибся.
+- **Для кого:** игроки, которые хотят не просто кликать фишки, а **расти** — от новичка до завсегдатая местного рейтинга; и сообщества/клубы/школы (тариф Team).
+- **Почему ценно:** удержание (рейтинги, серии, достижения, daily-пазлы), обучение (AI-тренер — главный дифференциатор), социальный слой (лидерборды по городам — «лучший в Алматы»), и реальная монетизация (Free / Pro $4 / Team $12, Stripe). Это прототип, который может стать сервисом.
+
+This hits the challenge's **Level «Великий»** and goes beyond it: real-time multiplayer, an AI coach, a social/city leaderboard layer, a clear niche, and a working billing flow.
+
+---
+
+## Feature highlights
+
+| Area | What's built |
+|------|--------------|
+| **Engine** | Bitboard Connect-4 engine (negamax + alpha-beta, transposition table, endgame solver) in a **Web Worker** — instant, zero server cost. Difficulties Easy → Insane. 33 unit tests. |
+| **Solo** | Play vs AI with per-move timers, **best-move hint** (Pro), **threat highlighting**, best-of series, win-line glow, falling-disc animation, resume from where you left off. |
+| **Duel by link** | Share one URL → real-time turn-based match over **Supabase Realtime** (broadcast + presence). Guest play (anonymous auth), reconnection, **spectator mode**, 10-min idle close, rematch. |
+| **AI Coach** 🏆 | Replays the game through the engine → per-move accuracy, blunder/brilliant/fork classification, eval bar, missed-threat detection → then **OpenAI** writes the narrative ("you missed the diagonal threat — col 1 was forced"). Falls back to a deterministic template with no API key. Scrub the whole game move-by-move. |
+| **Social** | ELO, win streaks, achievements, match history, **city leaderboards** (weekly / all-time, monthly reset), profiles with an ELO chart + opening heatmap. |
+| **Monetization** | Free / Pro ($4·mo / $36·yr) / Team ($12·mo) with a real **Stripe** test-mode checkout + webhook → Pro flag. Pro unlocks unlimited hints, full coach, skins, crown badge. |
+| **Creative** | Shareable **OG match-card** images + `/m/<token>` unfurl page, synthesized **sound design** (WebAudio, no assets), daily puzzles, light/dark themes. |
+
+---
+
+## Tech stack
+
+- **Next.js 16** (App Router) + **TypeScript**, deployed on **Vercel**
+- **Supabase** — Postgres + Auth (magic link + Google + anonymous) + Realtime + Row Level Security
+- **OpenAI** for the AI-coach narration (swappable provider; template fallback)
+- **Stripe** (test mode) for billing
+- Design system ported from a Claude Design export: **CSS custom properties** (light/dark) + **CSS Modules**, Geist / Geist Mono via `next/font`. No UI framework.
+
+## Architecture at a glance
+
+```
+app/            routes: / play game/[id] r/[slug] coach/[matchId] profile leaderboard
+                pricing puzzle login m/[token] + api/{coach,match/finalize,stripe,og}
+components/     ui/ (Button, Chip, Card, Avatar, Icon, …), board/, game/, coach/, charts/, layout/
+engine/         bitboard, search, eval, threats, solver, analyze, worker, index (+ tests)
+lib/            supabase/, game/, coach/, realtime/, elo, entitlements, sound, share, theme
+supabase/       migrations + seed + config (schema, RLS, leaderboard fn, ELO finalize)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Key design decisions: the engine is **pure & isomorphic** (runs in the worker *and* server-side for the coach + anti-cheat match validation); ELO is written **server-side only** after replaying the movelist (clients can't forge results); the board contract (`cells[col][row]`, `'c'`/`'a'`) is frozen in `engine/types.ts`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Run it locally
 
-## Learn More
+Requires Node 20.9+ and Docker (for local Supabase).
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+# 1) Backend (Postgres + Auth + Realtime) — applies migrations + seed
+supabase start          # CLI: https://supabase.com/docs/guides/cli
+supabase db reset
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# 2) Env — .env.local already has the standard local Supabase keys.
+#    Add OPENAI_API_KEY for live coach narration (optional; template works without).
+#    Add STRIPE_* test keys for billing (optional).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# 3) App
+npm install
+npm run dev             # http://localhost:3000
+```
 
-## Deploy on Vercel
+Without Docker/Supabase you can still run `npm run dev` and use **Solo play, the AI Coach (template mode), puzzles, and all marketing screens** — those work from the engine + local storage. Auth, duel, and leaderboards need Supabase.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Environment variables (`.env.example`)
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PRICE_*`, `NEXT_PUBLIC_SITE_URL`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Tests
+
+```bash
+npx vitest run        # engine (33) + ELO (15)
+npx tsc --noEmit      # types
+npm run build         # production build (21 routes)
+```
+
+## Deploy (Vercel + Supabase)
+
+1. **Supabase:** create a hosted project → `supabase link` → `supabase db push` (applies migrations) → enable **Anonymous sign-ins** and **Realtime**. Set Auth redirect URL to `https://<your-domain>/auth/callback`.
+2. **Vercel:** import this repo, set **Root Directory = `drop4`**, add all env vars (use Supabase project keys, OpenAI key, Stripe **test** keys), set `NEXT_PUBLIC_SITE_URL` to the deployed URL.
+3. **Stripe:** point a webhook at `https://<your-domain>/api/stripe/webhook` and copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
+
+---
+
+Built for the nFactorial Connect Four challenge. Design exported from Claude Design (`/screens`, `/tokens.jsx` in the parent folder) and implemented here.
