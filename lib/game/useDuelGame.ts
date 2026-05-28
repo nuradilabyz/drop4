@@ -749,18 +749,15 @@ export function useDuelGame(opts: UseDuelGameOptions): DuelGameApi {
   const saveForCoach = useCallback((): string | null => {
     const id = matchIdRef.current;
     if (!id) return null;
-    const hostChip = chipForPly(0, hostChipParity);
+    // Convention (frozen): host is always coral, guest is always aqua.
+    // The PARITY only flips who STARTS — never who owns which chip.
+    // Persist players in chip order ([coral, aqua]) so downstream code can
+    // resolve them positionally without re-deriving from seat.
+    const hostDisplay = seat === "host" ? name : opponentName;
+    const guestDisplay = seat === "guest" ? name : opponentName;
     const players: MatchPlayer[] = [
-      {
-        chip: hostChip,
-        name: seat === "host" ? name : opponentName,
-        human: seat === "host",
-      },
-      {
-        chip: hostChip === "c" ? "a" : "c",
-        name: seat === "guest" ? name : opponentName,
-        human: seat === "guest",
-      },
+      { chip: "c", name: hostDisplay, human: seat === "host" },
+      { chip: "a", name: guestDisplay, human: seat === "guest" },
     ];
     const outcome: GameResult = result ?? "draw";
     saveMatch({
@@ -768,7 +765,9 @@ export function useDuelGame(opts: UseDuelGameOptions): DuelGameApi {
       mode: "duel",
       players,
       movelist,
-      starter: hostChip,
+      // The chip that played ply 0 in THIS game — flips between coral and
+      // aqua across rematches as `hostChipParity` toggles.
+      starter: chipForPly(0, hostChipParity),
       think_ms: [],
       result: outcome,
       createdAt: new Date().toISOString(),

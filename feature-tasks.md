@@ -4,7 +4,7 @@
 
 ## Open
 
-_(пусто)_
+- [ ] **Анимации по всему сайту** — лендинг и игровые экраны выглядят слишком сухо: статичные карточки, нет hover-эффектов, переходы между routes без motion, нет mount-анимаций для модалок/тостов/победного баннера. Что добавить: (1) Framer Motion (или CSS-keyframes если хотим избежать deps) для входа карточек на лендинге по scroll, (2) hover lift на board-cells + tile-карточках, (3) win-line glow с pulsing animation, (4) modal slide-in/scale, (5) ELO-чарт draw-in path animation. Уважать `prefers-reduced-motion` везде. Цель — чувство «эта штука alive», не убивая performance на телефоне.
 
 ## Done
 

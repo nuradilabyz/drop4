@@ -40,6 +40,11 @@ interface PlayerMeta {
   name: string;
   rating?: number;
   city?: string;
+  /** True for the local viewer in this match. Used to decide whose name
+   *  to surface as "You" vs the opponent — without this flag the page
+   *  fell back to assuming `human = coral`, which is wrong in duels
+   *  where the viewer is the guest (aqua). */
+  human?: boolean;
 }
 interface StoredMatch {
   id: string;
@@ -65,16 +70,22 @@ type LoadState =
 
 /**
  * Coerce the `players` field into the { c, a } shape the coach expects.
- * The solo/duel matchStore persists `players` as an ordered array
- * [player1 ('c'), player2 ('a')]; older/other records may already be { c, a }.
+ * The matchStore persists `players` as an ordered array; saveForCoach now
+ * writes it in [coral, aqua] order, but older records (pre-fix duels with
+ * a starter-swapped order) might be inverted. Prefer an explicit chip
+ * lookup over positional reads so either layout resolves correctly.
  */
 function normalizePlayers(p: unknown): { c: PlayerMeta; a: PlayerMeta } {
   const fallback = { c: { name: "You" }, a: { name: "Opponent" } };
   if (!p) return fallback;
   if (Array.isArray(p)) {
+    type WithChip = PlayerMeta & { chip?: "c" | "a" };
+    const arr = p as WithChip[];
+    const byChipC = arr.find((item) => item?.chip === "c");
+    const byChipA = arr.find((item) => item?.chip === "a");
     return {
-      c: (p[0] as PlayerMeta) ?? fallback.c,
-      a: (p[1] as PlayerMeta) ?? fallback.a,
+      c: byChipC ?? arr[0] ?? fallback.c,
+      a: byChipA ?? arr[1] ?? fallback.a,
     };
   }
   const o = p as { c?: PlayerMeta; a?: PlayerMeta };
@@ -250,8 +261,18 @@ function Ready({
 }) {
   const { analysis, narration, cached } = data;
   const total = analysis.totalMoves;
-  const youName = match.players.c?.name || "You";
-  const oppName = match.players.a?.name || "Opponent";
+  // Chip-direct names: used for move-attribution lines like "Coral played col 3"
+  // (it's the chip on the board, not "you"). These are never viewer-aware.
+  const coralName = match.players.c?.name || "Coral";
+  const aquaName = match.players.a?.name || "Aqua";
+  // Viewer-aware "you" / "opponent" names: used for the result chip and the
+  // header "{you} vs {opp}" title. Resolve from the `human` flag set when
+  // the duel saved the record; default to coral for legacy records (solo
+  // games + pre-fix duels) where the human player was always coral.
+  const meIsCoral =
+    match.players.a?.human === true ? false : match.players.c?.human !== false;
+  const youName = meIsCoral ? coralName : aquaName;
+  const oppName = meIsCoral ? aquaName : coralName;
 
   // Board state at the current ply: moves 0..ply inclusive.
   const prefix = useMemo(
@@ -288,13 +309,17 @@ function Ready({
     [setPlaying, setPly, total],
   );
 
-  // Result chip.
+  // Result chip. Tone tracks the winner's chip colour (coral or aqua) so the
+  // pill stays consistent with the board. Text is viewer-relative: "You won"
+  // when the local viewer won, otherwise spell out the opponent's name.
   const resultTone = match.result === "c" ? "coral" : match.result === "a" ? "aqua" : "neutral";
+  const youWon =
+    (match.result === "c" && meIsCoral) || (match.result === "a" && !meIsCoral);
   const resultText =
     match.result === "draw"
       ? "Draw"
-      : match.result === "c"
-        ? `${youName} won`
+      : youWon
+        ? "You won"
         : `${oppName} won`;
 
   const evalText = move ? formatEval(move.player === "c" ? move.evalAfter : -move.evalAfter, move.isMate) : "0.0";
@@ -361,7 +386,7 @@ function Ready({
               <div className={styles.playedRow}>
                 {move ? (
                   <>
-                    {move.player === "c" ? youName : oppName} played{" "}
+                    {move.player === "c" ? coralName : aquaName} played{" "}
                     <span className={styles.colMono}>col {move.col + 1}</span>
                     {moveTag && moveTag !== "normal" && (
                       <TagChip tag={moveTag} />

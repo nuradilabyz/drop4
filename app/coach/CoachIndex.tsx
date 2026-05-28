@@ -41,9 +41,15 @@ function resultFor(
   rec: MatchRecord,
 ): { text: string; tone: "coral" | "aqua" | "neutral" } {
   if (rec.result === "draw") return { text: "Draw", tone: "neutral" };
-  // The local human is coral by convention.
-  if (rec.result === "c") return { text: "You won", tone: "coral" };
-  return { text: `${opponentName(rec)} won`, tone: "aqua" };
+  // Find which side the local viewer was on. Defaults to coral if no
+  // `human` flag is set (solo records pre-fix duel save). Then we just
+  // compare the result chip against the viewer's chip.
+  const me = rec.players.find((p) => p.human);
+  const myChip = me?.chip ?? "c";
+  const tone = rec.result === "c" ? "coral" : "aqua";
+  const youWon = rec.result === myChip;
+  if (youWon) return { text: "You won", tone };
+  return { text: `${opponentName(rec)} won`, tone };
 }
 
 export function CoachIndex() {
