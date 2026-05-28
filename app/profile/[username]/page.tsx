@@ -302,16 +302,26 @@ export default async function ProfilePage(props: ProfileRouteProps) {
               displayName={profile.name}
             />
             {isOwnProfile && (
-              <form action="/auth/signout" method="post">
+              <>
                 <Button
-                  type="submit"
-                  variant="secondary"
+                  variant="outline"
                   size="md"
-                  icon={<Icon name="arrow" size={13} />}
+                  href="/account/password"
+                  icon={<Icon name="settings" size={13} />}
                 >
-                  Sign out
+                  Edit account
                 </Button>
-              </form>
+                <form action="/auth/signout" method="post">
+                  <Button
+                    type="submit"
+                    variant="secondary"
+                    size="md"
+                    icon={<Icon name="arrow" size={13} />}
+                  >
+                    Sign out
+                  </Button>
+                </form>
+              </>
             )}
           </div>
         </header>
