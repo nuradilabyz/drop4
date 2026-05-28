@@ -438,6 +438,11 @@ export function useSoloGame(opts: UseSoloGameOptions): SoloGameApi {
       setThreats([]);
       setThreatsOn(false);
       setHintCol(null);
+      // Free-tier hint + threat budgets are per-game, not per-session. Without
+      // this reset, a user who spent both budgets in game 1 would land in game 2
+      // with the buttons greyed at 0/3 — looks broken, especially after a Rematch.
+      setHintsUsed(0);
+      setThreatsUsed(0);
       setElapsedMs(0);
       setStarter(nextStarter);
       finishedRef.current = null;
