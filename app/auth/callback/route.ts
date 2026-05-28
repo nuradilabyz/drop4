@@ -1,9 +1,19 @@
 /**
  * Supabase auth callback. Exchanges the `?code` (magic link / OAuth) for a
- * session, then redirects to `?next` (default home). Next 16 route handler.
+ * session, then redirects to `?next` (default home) with `welcome=1` set so
+ * the landing page can pop a one-shot toast. Next 16 route handler.
  */
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+
+/** Add `welcome=1` to whatever path the user is being sent to, preserving
+ *  any query they already had. */
+function withWelcome(path: string): string {
+  const [pathname, query = ""] = path.split("?", 2);
+  const params = new URLSearchParams(query);
+  params.set("welcome", "1");
+  return `${pathname}?${params.toString()}`;
+}
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -16,14 +26,15 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      const target = withWelcome(next);
       // In prod behind a proxy, prefer the forwarded host if present.
       const forwardedHost = request.headers.get("x-forwarded-host");
       const isLocal = process.env.NODE_ENV === "development";
       if (isLocal || !forwardedHost) {
-        return NextResponse.redirect(`${origin}${next}`);
+        return NextResponse.redirect(`${origin}${target}`);
       }
       const proto = request.headers.get("x-forwarded-proto") ?? "https";
-      return NextResponse.redirect(`${proto}://${forwardedHost}${next}`);
+      return NextResponse.redirect(`${proto}://${forwardedHost}${target}`);
     }
   }
 

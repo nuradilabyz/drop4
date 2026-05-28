@@ -37,19 +37,6 @@ export default function LoginPage() {
     }
   }
 
-  async function signInWithGoogle() {
-    setError(null);
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo },
-    });
-    if (error) {
-      setError(error.message);
-      setStatus("error");
-    }
-  }
-
   return (
     <main className={styles.wrap}>
       <div className={styles.card}>
@@ -91,12 +78,6 @@ export default function LoginPage() {
                 Send magic link
               </Button>
             </form>
-
-            <div className={styles.divider}>or</div>
-
-            <Button variant="secondary" size="lg" full onClick={signInWithGoogle}>
-              Continue with Google
-            </Button>
 
             {status === "error" && error && <p className={styles.error}>{error}</p>}
           </>
