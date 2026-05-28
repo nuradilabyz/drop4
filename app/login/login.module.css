@@ -79,3 +79,91 @@
   color: var(--text-mute);
   align-self: center;
 }
+
+/* ─── Mode tabs ──────────────────────────────────────────────────────────── */
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 3px;
+  gap: 3px;
+  background: var(--surface-2);
+}
+.tab {
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-mute);
+  cursor: pointer;
+  transition: color 0.14s ease, background 0.14s ease;
+}
+.tab:hover {
+  color: var(--text);
+}
+.tabActive {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 2px color-mix(in oklab, var(--text) 6%, transparent);
+}
+
+/* ─── Password rule checklist ───────────────────────────────────────────── */
+.rules {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 0 2px 2px;
+}
+.rule {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-mute);
+  transition: color 0.14s ease;
+}
+.ruleMet {
+  color: var(--success);
+}
+.ruleDot {
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  font-size: 9px;
+  flex-shrink: 0;
+}
+
+/* ─── Auxiliary links ───────────────────────────────────────────────────── */
+.aux {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+.auxLink {
+  color: var(--text-mute);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+}
+.auxLink:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+.notice {
+  font-size: 12px;
+  color: var(--text-dim);
+  background: var(--surface-2);
+  border-radius: 10px;
+  padding: 10px 12px;
+  line-height: 1.45;
+}
