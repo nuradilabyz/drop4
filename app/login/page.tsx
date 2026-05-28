@@ -5,19 +5,19 @@
  * tabs at the top:
  *
  *   - signin: email + password → `signInWithPassword`. Fast path for
- *     anyone who has an account already.
- *   - signup: email + password + live policy checklist → `signUp`.
- *     Confirmation email is sent; user clicks the link to verify.
+ *     anyone who has an account already. No email round-trip.
+ *   - signup: EMAIL ONLY → `signInWithOtp({ shouldCreateUser: true })`.
+ *     Sends a one-click confirmation link. When the user clicks it,
+ *     `/auth/callback` exchanges the code for a session and forwards
+ *     them to `/account/password`, where they set their first password.
+ *     The order — confirm-then-choose-password — is what the user asked
+ *     for, and avoids the awkward "invent a password before you've even
+ *     proved the email is yours" pattern.
  *   - reset: email-only → `resetPasswordForEmail`. Sends a link that
- *     drops the user on `/account/password` with a recovery session.
- *
- * The "magic link" entry point was removed because the user wanted
- * password-based login as the primary mechanism so returning users
- * don't have to fetch a new email every time. Forgot-password is the
- * remaining email round-trip and that's only on the recovery path.
+ *     also lands on `/account/password` with a recovery session.
  */
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
@@ -29,35 +29,12 @@ import styles from "./login.module.css";
 type Mode = "signin" | "signup" | "reset";
 type Status = "idle" | "submitting" | "sent" | "error";
 
-interface Rule {
-  label: string;
-  test: (pw: string) => boolean;
-}
-const RULES: Rule[] = [
-  { label: "At least 8 characters", test: (p) => p.length >= 8 },
-  { label: "One lowercase letter (a–z)", test: (p) => /[a-z]/.test(p) },
-  { label: "One uppercase letter (A–Z)", test: (p) => /[A-Z]/.test(p) },
-  { label: "One digit (0–9)", test: (p) => /\d/.test(p) },
-];
-
-function evalRules(pw: string): boolean[] {
-  return RULES.map((r) => r.test(pw));
-}
-
 export default function LoginPage() {
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
-
-  const ruleStates = useMemo(() => evalRules(password), [password]);
-  const allRulesMet = ruleStates.every(Boolean);
-
-  const redirectTo =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/auth/callback`
-      : undefined;
 
   function reset() {
     setStatus("idle");
@@ -89,15 +66,15 @@ export default function LoginPage() {
     }
 
     if (mode === "signup") {
-      if (!allRulesMet) {
-        setError("Your password doesn't meet the requirements below.");
-        setStatus("error");
-        return;
-      }
-      const { error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signInWithOtp({
         email: trimmedEmail,
-        password,
-        options: { emailRedirectTo: redirectTo },
+        options: {
+          shouldCreateUser: true,
+          // Send the confirm click through the callback and on to the
+          // password-setup form — first-time visitors need a password
+          // before sign-in becomes useful.
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=/account/password`,
+        },
       });
       if (error) {
         setError(error.message);
@@ -110,9 +87,6 @@ export default function LoginPage() {
 
     // mode === "reset"
     const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
-      // Route through the regular callback so the recovery code is exchanged
-      // for a session, then land on the form that actually changes the
-      // password.
       redirectTo: `${window.location.origin}/auth/callback?next=/account/password`,
     });
     if (error) {
@@ -135,10 +109,18 @@ export default function LoginPage() {
               {mode === "signup"
                 ? "We sent a confirmation link to "
                 : "We sent a password-reset link to "}
-              <span className="mono">{email}</span>. Open it on this device to
-              continue.
+              <span className="mono">{email}</span>.
+              {mode === "signup"
+                ? " Tap it to confirm your email — then you'll choose a password."
+                : " Tap it to choose a new password."}
             </p>
           </div>
+          <p className={styles.notice}>
+            Didn&apos;t get it? Check spam, and give it a minute — Supabase&apos;s
+            built-in mailer can be slow. If you still don&apos;t see it after
+            a few minutes, the project is on the test mailer&apos;s 2-emails-
+            per-hour cap; wait and retry.
+          </p>
           <button
             type="button"
             className={styles.auxLink}
@@ -208,6 +190,14 @@ export default function LoginPage() {
           </div>
         )}
 
+        {isSignup && (
+          <p className={styles.notice}>
+            We&apos;ll email you a confirmation link. After you tap it,
+            you&apos;ll choose a password — that&apos;s what you&apos;ll use
+            to sign in next time.
+          </p>
+        )}
+
         <form className={styles.form} onSubmit={onSubmit}>
           <Input
             type="email"
@@ -219,37 +209,16 @@ export default function LoginPage() {
             lead={<Icon name="user" size={14} />}
           />
 
-          {!isReset && (
+          {mode === "signin" && (
             <Input
               type="password"
               required
-              autoComplete={isSignup ? "new-password" : "current-password"}
-              placeholder={isSignup ? "Create a password" : "Your password"}
+              autoComplete="current-password"
+              placeholder="Your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               lead={<Icon name="lock" size={14} />}
             />
-          )}
-
-          {isSignup && (
-            <ul className={styles.rules}>
-              {RULES.map((r, i) => {
-                const met = ruleStates[i];
-                return (
-                  <li
-                    key={r.label}
-                    className={[styles.rule, met && styles.ruleMet]
-                      .filter(Boolean)
-                      .join(" ")}
-                  >
-                    <span className={styles.ruleDot} aria-hidden>
-                      {met ? "✓" : ""}
-                    </span>
-                    {r.label}
-                  </li>
-                );
-              })}
-            </ul>
           )}
 
           <Button
@@ -263,7 +232,7 @@ export default function LoginPage() {
             {isReset
               ? "Send reset link"
               : isSignup
-                ? "Create account"
+                ? "Send confirmation link"
                 : "Sign in"}
           </Button>
 
