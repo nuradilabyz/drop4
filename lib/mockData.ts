@@ -92,7 +92,10 @@ export interface LeaderboardRow {
 const LEADERBOARD: LeaderboardRow[] = [
   { rank: 1, username: "mareke_ai", name: "mareke_ai", elo: 1934, delta: "+42", city: "Almaty", wins: 142, losses: 38, tag: "gold" },
   { rank: 2, username: "aigerim.k", name: "Aigerim K.", elo: 1882, delta: "+11", city: "Astana", wins: 88, losses: 41 },
-  { rank: 3, username: "tigran.dvk", name: "tigran.dvk", elo: 1847, delta: "+18", city: "Almaty", wins: 142, losses: 80, tag: "self" },
+  // No `tag: "self"` here — the "You" highlight must come from the real auth
+  // session, never from a hardcoded mock row that would otherwise label a
+  // stranger's name as the visitor's own in unconfigured fallbacks.
+  { rank: 3, username: "tigran.dvk", name: "tigran.dvk", elo: 1847, delta: "+18", city: "Almaty", wins: 142, losses: 80 },
   { rank: 4, username: "serikbol_99", name: "serikbol_99", elo: 1821, delta: "−6", city: "Almaty", wins: 76, losses: 39 },
   { rank: 5, username: "arman_94", name: "arman_94", elo: 1812, delta: "+24", city: "Shymkent", wins: 64, losses: 33 },
   { rank: 6, username: "daria.f", name: "Daria F.", elo: 1804, delta: "+8", city: "Almaty", wins: 88, losses: 51 },
@@ -146,7 +149,9 @@ export function getLandingLeaderboard(): LeaderboardRow[] {
     { rank: 2, username: "aigerim.k", name: "Aigerim K.", elo: 1882, delta: "+11", city: "Almaty", wins: 88, losses: 41 },
     { rank: 3, username: "tigran.dvk", name: "tigran.dvk", elo: 1847, delta: "−6", city: "Almaty", wins: 142, losses: 80 },
     { rank: 4, username: "serikbol_99", name: "serikbol_99", elo: 1821, delta: "+18", city: "Almaty", wins: 76, losses: 39 },
-    { rank: 5, username: "you", name: "You", elo: 1798, delta: "+24", city: "Almaty", wins: 70, losses: 44, tag: "self" },
+    // Defensive: no hard-coded "self" — the leaderboard highlight must always
+    // be wired up to the real signed-in user, not pre-baked in mock fallbacks.
+    { rank: 5, username: "you", name: "Anonymous", elo: 1798, delta: "+24", city: "Almaty", wins: 70, losses: 44 },
   ];
 }
 

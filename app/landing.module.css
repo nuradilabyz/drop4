@@ -438,11 +438,36 @@
 
 .lbRow {
   display: grid;
-  grid-template-columns: 40px 1fr 100px 70px;
+  /* minmax(0,…) so the name column actually shrinks to fit instead of pushing
+     the row past the card; the ELO + delta cells size to their content. */
+  grid-template-columns: 40px minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   padding: 14px 22px;
   border-bottom: 1px solid var(--border);
+}
+
+.lbName,
+.lbSelfName {
+  /* Names with "Aigerim K." in them have to truncate cleanly on mobile rather
+     than squeezing the ELO column off the visible area. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .lbRow {
+    grid-template-columns: 28px minmax(0, 1fr) auto auto;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+  .lbName,
+  .lbSelfName,
+  .lbElo {
+    font-size: 13.5px;
+  }
 }
 
 .lbSelf {
