@@ -307,7 +307,7 @@ export default async function ProfilePage(props: ProfileRouteProps) {
                   variant="outline"
                   size="md"
                   href="/account/password"
-                  icon={<Icon name="settings" size={13} />}
+                  icon={<Icon name="user" size={13} />}
                 >
                   Edit account
                 </Button>
