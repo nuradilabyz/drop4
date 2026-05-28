@@ -1,0 +1,56 @@
+.main {
+  min-height: calc(100vh - 60px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(32px, 6vw, 64px) clamp(20px, 5vw, 56px);
+}
+
+.card {
+  max-width: 480px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  animation: drop4-fade-up 460ms var(--ease) both;
+}
+
+.logoWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  color: var(--text-mute);
+}
+
+.title {
+  font-size: clamp(32px, 6vw, 44px);
+  letter-spacing: -1.6px;
+  font-weight: 600;
+  line-height: 1.05;
+  margin: 8px 0 0;
+  color: var(--text);
+}
+
+.sub {
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--text-dim);
+  margin: 0;
+}
+
+.ctas {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+@media (max-width: 480px) {
+  .ctas {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+}

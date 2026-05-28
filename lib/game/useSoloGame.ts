@@ -39,6 +39,7 @@ import {
   saveProgress,
   type MatchPlayer,
 } from "./matchStore";
+import { playThreat } from "@/lib/sound";
 
 export type SoloStatus = "playing" | "thinking" | "won" | "draw";
 
@@ -438,6 +439,10 @@ export function useSoloGame(opts: UseSoloGameOptions): SoloGameApi {
     if (!isPro) setThreatsUsed((n) => n + 1);
     setThreatsOn(true);
     setThreats(found);
+    // Play the tense two-tone alert cue defined in lib/sound.ts — without
+    // this, the threat reveal happens silently. The cue lives behind the
+    // global mute flag, same as drop/win.
+    playThreat();
     return "shown";
   }, [threatsOn, threatsLocked, cells, isPro]);
 

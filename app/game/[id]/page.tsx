@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import type { Difficulty } from "@/engine/types";
+import { getEntitlements } from "@/lib/entitlements";
+import { createClient } from "@/lib/supabase/server";
 import { SoloGame } from "./SoloGame";
 
 export const metadata: Metadata = {
@@ -44,6 +46,14 @@ export default async function GamePage(props: GameRouteProps) {
   const bestOf = parseBestOf(search.bo);
   const ranked = mode === "ranked";
 
+  // Resolve the viewer's Pro entitlement server-side. The hook reads
+  // subscriptions (authoritative) with a profiles.is_pro fallback, and
+  // gracefully degrades to free if Supabase is unconfigured — so this is
+  // safe even in preview/local where service-role keys aren't set.
+  const supabase = await createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  const { isPro } = await getEntitlements(auth.user?.id);
+
   // TODO: duel handled by realtime agent — `mode=duel` will mount a DuelGame
   // controller here. For now every mode renders the solo board (ranked uses the
   // calibrated-bot label).
@@ -55,7 +65,7 @@ export default async function GamePage(props: GameRouteProps) {
         difficulty={difficulty}
         bestOf={bestOf}
         ranked={ranked}
-        isPro={false}
+        isPro={isPro}
       />
     </main>
   );

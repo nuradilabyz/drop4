@@ -150,27 +150,23 @@ export function PlayLobby() {
           <div className={styles.modeNote}>Realtime · play as a guest</div>
         </div>
 
-        {/* ── Ranked / Quick match ── */}
+        {/* ── Calibrated AI match ─────────────────────────────────────
+            Was originally labelled "Quick match" + "find a stranger near
+            your ELO" with a fake 1798 number, but real player-vs-player
+            matchmaking isn't wired yet — clicking just spawned a solo
+            game against a calibrated bot. The fake ELO also contradicted
+            the user's real profile ELO. Until a true matchmaking queue
+            lands, this tile is honest about what it does: a solo run
+            against a bot tuned to challenge you. */}
         <div className={styles.mode}>
           <span className={styles.accent} data-accent="coral" />
           <div className={styles.modeKicker} data-accent="coral">Ranked</div>
-          <h3 className={styles.modeTitle}>Quick match</h3>
-          <p className={styles.modeBody}>Find a stranger near your ELO.</p>
+          <h3 className={styles.modeTitle}>Calibrated AI match</h3>
+          <p className={styles.modeBody}>
+            A single ranked run against a bot tuned to push you. Win count
+            feeds your profile streak.
+          </p>
 
-          <div className={styles.eloBox}>
-            <div className={styles.eloHead}>
-              <span>Your ELO</span>
-              <span>Match range</span>
-            </div>
-            <div className={styles.eloRow}>
-              <span className={`${styles.eloValue} mono`}>1798</span>
-              <span className={`${styles.eloRange} mono`}>1750 — 1850</span>
-            </div>
-            <div className={styles.eloBar}>
-              <span className={styles.eloBarFill} />
-              <span className={styles.eloBarKnob} />
-            </div>
-          </div>
           <Button
             variant="secondary"
             size="lg"
@@ -178,9 +174,9 @@ export function PlayLobby() {
             icon={<Icon name="bolt" size={13} />}
             onClick={startRanked}
           >
-            Quick match
+            Start ranked
           </Button>
-          <div className={styles.modeNote}>Fallback: vs calibrated bot</div>
+          <div className={styles.modeNote}>Solo · calibrated bot · counts toward streak</div>
         </div>
       </div>
 

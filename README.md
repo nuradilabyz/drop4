@@ -33,7 +33,7 @@ This hits the challenge's **Level «Великий»** and goes beyond it: real-
 ## Tech stack
 
 - **Next.js 16** (App Router) + **TypeScript**, deployed on **Vercel**
-- **Supabase** — Postgres + Auth (magic link + Google + anonymous) + Realtime + Row Level Security
+- **Supabase** — Postgres + Auth (email + password, branded recovery, anonymous guest sign-in for duel guests) + Realtime + Row Level Security
 - **OpenAI** for the AI-coach narration (swappable provider; template fallback)
 - **Stripe** (test mode) for billing
 - Design system ported from a Claude Design export: **CSS custom properties** (light/dark) + **CSS Modules**, Geist / Geist Mono via `next/font`. No UI framework.

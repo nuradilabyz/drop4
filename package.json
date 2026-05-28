@@ -2,6 +2,13 @@
   "name": "drop4",
   "version": "0.1.0",
   "private": true,
+  "description": "Drop4 — a modern competitive web platform for Connect Four with multiplayer by link, an AI coach that explains your mistakes, and city leaderboards. Four in a row. Sharper every drop.",
+  "homepage": "https://drop4-six.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nuradilabyz/drop4.git"
+  },
+  "license": "MIT",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
