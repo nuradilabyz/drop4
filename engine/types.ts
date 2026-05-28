@@ -91,10 +91,20 @@ export function drop(cells: Cells, col: number, player: Player): Cells {
   return next;
 }
 
-/** Rebuild a board from a movelist. Throws on an illegal/overflowing column. */
-export function fromMovelist(moves: Movelist): Cells {
+/**
+ * Rebuild a board from a movelist. Throws on an illegal/overflowing column.
+ *
+ * `starter` is whose disc lands on ply 0 — defaults to `'c'` (coral) which is
+ * the convention for solo + game 1 of a duel series. After a duel rematch
+ * the starter flips to `'a'` (because the hostChipParity flips), so the
+ * reconstructed cells must place an aqua disc at ply 0 in that game — not
+ * a coral one — otherwise the board renders the wrong chip colour and the
+ * hover-ghost colour stops matching what's actually dropping (the bug the
+ * user flagged after their first rematch).
+ */
+export function fromMovelist(moves: Movelist, starter: Player = "c"): Cells {
   let cells = createBoard();
-  let player: Player = "c";
+  let player: Player = starter;
   for (const col of moves) {
     if (!canDrop(cells, col)) {
       throw new Error(`Illegal move: column ${col} is full or out of range`);

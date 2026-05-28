@@ -321,21 +321,40 @@ function DuelRoomInner({
           <p className={styles.rematchModalSub}>
             {game.rematchOffered
               ? "Accept to start a fresh game — the starting colour flips."
-              : "They'll see this prompt and can accept on their end."}
+              : "They'll see this prompt. Cancel if you've changed your mind."}
           </p>
-          {game.rematchOffered && (
-            <div className={styles.rematchModalActions}>
+          <div className={styles.rematchModalActions}>
+            {game.rematchOffered ? (
+              <>
+                <Button
+                  variant="coral"
+                  size="lg"
+                  full
+                  icon={<Icon name="refresh" size={15} />}
+                  onClick={game.rematch}
+                >
+                  Accept rematch
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="md"
+                  full
+                  onClick={game.declineRematch}
+                >
+                  Decline
+                </Button>
+              </>
+            ) : (
               <Button
-                variant="coral"
-                size="lg"
+                variant="ghost"
+                size="md"
                 full
-                icon={<Icon name="refresh" size={15} />}
-                onClick={game.rematch}
+                onClick={game.declineRematch}
               >
-                Accept rematch
+                Cancel
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     ) : null;

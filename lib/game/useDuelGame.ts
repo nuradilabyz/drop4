@@ -133,6 +133,8 @@ export interface DuelGameApi extends DuelGameState {
   resign: () => void;
   /** Offer / accept a rematch. */
   rematch: () => void;
+  /** Decline an incoming rematch offer, OR cancel our own pending one. */
+  declineRematch: () => void;
   /** Persist the finished game locally + return its id for the coach handoff. */
   saveForCoach: () => string | null;
 }
@@ -292,7 +294,10 @@ export function useDuelGame(opts: UseDuelGameOptions): DuelGameApi {
   const applyMovelist = useCallback((moves: Movelist) => {
     let next: Cells;
     try {
-      next = fromMovelist(moves);
+      // The starter chip flips on rematch (hostChipParity). Pass it through
+      // so the reconstructed cells colour each ply consistently with whose
+      // turn `chipForPly` says it is.
+      next = fromMovelist(moves, chipForPly(0, hostChipParityRef.current));
     } catch {
       return; // illegal snapshot — ignore
     }
@@ -377,7 +382,10 @@ export function useDuelGame(opts: UseDuelGameOptions): DuelGameApi {
         const expected = movelistRef.current.length;
         let board: Cells;
         try {
-          board = fromMovelist(movelistRef.current);
+          board = fromMovelist(
+            movelistRef.current,
+            chipForPly(0, hostChipParityRef.current),
+          );
         } catch {
           // Local movelist is corrupt — re-sync from the peer.
           channelRef.current?.send({ type: "hello", by: uidRef.current });
@@ -427,6 +435,13 @@ export function useDuelGame(opts: UseDuelGameOptions): DuelGameApi {
             setRematchOffered(true);
           }
           // else: stray ack from a completed handshake — ignore.
+        } else {
+          // accept=false → peer declined an offer (or cancelled their
+          // own). Clear both sides of the handshake so the modal closes
+          // for everyone and the "Rematch" button is the only path
+          // forward from here.
+          setRematchOffered(false);
+          setRematchPending(false);
         }
         return;
       }
@@ -716,6 +731,20 @@ export function useDuelGame(opts: UseDuelGameOptions): DuelGameApi {
     }
   }, [phase, rematchOffered]);
 
+  // Decline an incoming offer OR cancel our own pending one. Both go through
+  // the same `accept: false` broadcast — the peer's handler clears both
+  // sides of the handshake so the modal vanishes everywhere.
+  const declineRematch = useCallback(() => {
+    if (!rematchOffered && !rematchPending) return;
+    channelRef.current?.send({
+      type: "rematch",
+      by: uidRef.current,
+      accept: false,
+    });
+    setRematchOffered(false);
+    setRematchPending(false);
+  }, [rematchOffered, rematchPending]);
+
   // ── Coach handoff: persist locally (no ELO for casual duel). ──
   const saveForCoach = useCallback((): string | null => {
     const id = matchIdRef.current;
@@ -790,6 +819,7 @@ export function useDuelGame(opts: UseDuelGameOptions): DuelGameApi {
     play,
     resign,
     rematch,
+    declineRematch,
     saveForCoach,
   };
 }
