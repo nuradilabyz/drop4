@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Avatar, Button, Icon, Logo, ThemeToggle } from "@/components/ui";
+import { createClient } from "@/lib/supabase/server";
 import styles from "./Nav.module.css";
 
 export interface NavProps {
@@ -16,11 +17,49 @@ const LINKS: { label: NonNullable<NavProps["active"]>; href: string }[] = [
 ];
 
 /**
+ * Reads the auth session on the server. Returns the *real* profile only when
+ * a non-anonymous user is signed in — anonymous-auth (used for duel guests)
+ * MUST NOT light up the nav as "your profile", otherwise unsigned visitors
+ * who happened to land on a duel link see somebody else's handle in the nav.
+ */
+async function loadMe(): Promise<{
+  href: string;
+  name: string;
+  username: string;
+} | null> {
+  try {
+    const supabase = await createClient();
+    const { data: userResp } = await supabase.auth.getUser();
+    const user = userResp.user;
+    if (!user || user.is_anonymous) return null;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("username, display_name")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!profile) return null;
+    return {
+      href: `/profile/${profile.username}`,
+      name: profile.display_name || profile.username,
+      username: profile.username,
+    };
+  } catch {
+    // Treat any auth/DB hiccup as "not signed in" — never as the wrong user.
+    return null;
+  }
+}
+
+/**
  * Top navigation used on every marketing/profile page. Sticky, blurred, with a
  * border-bottom. Hidden under the mobile breakpoint (the MobileTabBar takes
- * over). Style only with tokens; no app/layout.tsx changes.
+ * over). The "you" slot on the right shows the signed-in user's avatar — or a
+ * Sign-in button for guests. There is intentionally no fallback to mock data.
  */
-export function Nav({ active, className }: NavProps) {
+export async function Nav({ active, className }: NavProps) {
+  const me = await loadMe();
+
   return (
     <nav className={[styles.nav, className].filter(Boolean).join(" ")}>
       <div className={styles.left}>
@@ -47,9 +86,15 @@ export function Nav({ active, className }: NavProps) {
           Play
         </Button>
         <ThemeToggle size={34} />
-        <Link href="/profile/tigran.dvk" aria-label="Your profile">
-          <Avatar name="Tigran D." size={32} />
-        </Link>
+        {me ? (
+          <Link href={me.href} aria-label={`Your profile (${me.name})`}>
+            <Avatar name={me.name} size={32} />
+          </Link>
+        ) : (
+          <Button variant="ghost" size="sm" href="/login">
+            Sign in
+          </Button>
+        )}
       </div>
     </nav>
   );
