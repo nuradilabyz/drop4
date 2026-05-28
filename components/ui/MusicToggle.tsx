@@ -54,7 +54,10 @@ export function MusicToggle({ size = 34, className, src }: MusicToggleProps) {
     if (musicPlayer.isPlaying()) {
       musicPlayer.disable();
     } else {
-      musicPlayer.enable(src);
+      // This click is a user gesture → start AUDIBLE immediately. Without
+      // viaGesture the cold path starts muted and waits for the next gesture,
+      // so the user taps "on" and hears nothing until a second tap.
+      musicPlayer.enable(src, { viaGesture: true });
     }
   }
 

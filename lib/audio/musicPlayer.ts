@@ -94,11 +94,23 @@ class MusicPlayer {
    *
    * Either path persists the preference as "on".
    */
-  enable(src: string): void {
+  enable(src: string, opts: { viaGesture?: boolean } = {}): void {
     if (typeof window === "undefined") return;
     this.persist("on");
     this.lastSrc = src;
     this.armVisibilityRecovery();
+
+    // A real user gesture (the toggle tap, or a global gesture handler firing)
+    // grants permission for *audible* playback. Start unmuted immediately and
+    // call play() synchronously inside the gesture. The muted-autoplay path
+    // below would waste the gesture — it starts SILENT audio and waits for the
+    // NEXT interaction, so the user taps "on", hears nothing, and has to tap a
+    // second time. That two-tap behaviour is the "I turned it on but it doesn't
+    // play" bug on mobile Chrome (strict autoplay). startAudible() fixes it.
+    if (opts.viaGesture) {
+      this.startAudible();
+      return;
+    }
 
     if (!this.audio) {
       const a = new Audio(src);
@@ -150,40 +162,53 @@ class MusicPlayer {
     });
   }
 
-  /** Apply unmute and/or resume on an existing audio element. */
-  private unmuteAndPlay(): void {
-    const a = this.audio;
-    if (!a) return;
+  /**
+   * Make audio actually AUDIBLE *now*. Must be called inside a user gesture
+   * (toggle tap / a global gesture handler) for the play() to be permitted.
+   *
+   * Always: ensure an element exists (create unmuted if missing), lift the
+   * mute, and call play() — even if the element was already "playing" muted.
+   * The re-play() matters on mobile: unmuting a muted-autoplay element does
+   * NOT make it audible on its own; the browser needs a play() call within a
+   * gesture, otherwise it stays silent (or pauses). Setting muted=false alone
+   * was the second half of the "on but silent" bug.
+   */
+  private startAudible(): void {
     this.disarmGesture();
-    const wasMuted = a.muted;
-    const wasPaused = a.paused;
-    if (wasMuted) a.muted = false;
-
-    if (wasPaused) {
-      a.volume = 0;
-      const p = a.play();
-      if (p && typeof p.then === "function") {
-        p.then(
-          () => {
-            this.fade(DEFAULT_VOLUME, FADE_IN_MS);
-            this.notify();
-          },
-          () => {
-            // Lost the gesture window — re-arm the cold-start path.
-            this.armColdStart(a.src);
-          },
-        );
-      } else {
-        this.fade(DEFAULT_VOLUME, FADE_IN_MS);
-        this.notify();
-      }
-    } else if (wasMuted) {
-      // Already playing silently — fade in from zero on top of the audible
-      // signal so the lofi swells in instead of snapping to full bed.
-      a.volume = 0;
+    let a = this.audio;
+    if (!a) {
+      if (!this.lastSrc) return;
+      a = new Audio(this.lastSrc);
+      a.loop = true;
+      a.preload = "auto";
+      a.setAttribute("playsinline", "");
+      this.audio = a;
+    }
+    a.muted = false;
+    a.volume = 0;
+    const p = a.play();
+    if (p && typeof p.then === "function") {
+      p.then(
+        () => {
+          this.fade(DEFAULT_VOLUME, FADE_IN_MS);
+          this.notify();
+        },
+        () => {
+          // play() was rejected (e.g. called outside a gesture by the
+          // visibility-recovery path). Re-arm so the next interaction retries.
+          if (this.lastSrc) this.armColdStart(this.lastSrc);
+        },
+      );
+    } else {
       this.fade(DEFAULT_VOLUME, FADE_IN_MS);
       this.notify();
     }
+  }
+
+  /** Apply unmute and/or resume on an existing audio element. Delegates to
+   *  startAudible() so unmute always includes a fresh play() (mobile-safe). */
+  private unmuteAndPlay(): void {
+    this.startAudible();
   }
 
   /** First-gesture listener used when we're already playing-but-muted. */
@@ -214,7 +239,8 @@ class MusicPlayer {
         return;
       }
       this.disarmGesture();
-      this.enable(src);
+      // We're inside a real gesture here — start audible directly.
+      this.enable(src, { viaGesture: true });
     };
     this.gestureHandler = handler;
     for (const ev of GESTURE_EVENTS) {
