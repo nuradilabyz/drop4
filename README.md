@@ -2,7 +2,7 @@
 
 A modern, competitive web platform for Connect Four. Not another clone — a startup-grade product: play a friend by link, drill against an AI **that explains your mistakes**, climb your **city's** ladder, and go Pro.
 
-**Live demo:** _add your Vercel URL here_ · **Repo:** https://github.com/nuradilabyz/drop4
+**Live demo:** **https://drop4-six.vercel.app** · **Repo:** https://github.com/nuradilabyz/drop4
 
 ---
 
