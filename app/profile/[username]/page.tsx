@@ -5,6 +5,7 @@ import { EloChart } from "@/components/charts/EloChart";
 import { Footer } from "@/components/layout/Footer";
 import { MobileTabBar } from "@/components/layout/MobileTabBar";
 import { Nav } from "@/components/layout/Nav";
+import { ShareProfileButton } from "@/components/profile/ShareProfileButton";
 import { Avatar, Button, Card, Chip, Icon, StatTile } from "@/components/ui";
 import {
   getMockProfile,
@@ -296,9 +297,10 @@ export default async function ProfilePage(props: ProfileRouteProps) {
             </div>
           </div>
           <div className={styles.headerActions}>
-            <Button variant="outline" size="md" href="/play" icon={<Icon name="share" size={13} />}>
-              Share profile
-            </Button>
+            <ShareProfileButton
+              path={`/profile/${profile.username}`}
+              displayName={profile.name}
+            />
             {isOwnProfile && (
               <form action="/auth/signout" method="post">
                 <Button
