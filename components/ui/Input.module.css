@@ -24,9 +24,29 @@
   font-family: var(--font-mono);
   font-size: 13px;
   letter-spacing: -0.2px;
+  /* Strip every native chrome the platform might still want to draw around
+   * a `<input type="password" required>` — focus ring, invalid glow, tap
+   * highlight, autofill tint. We're already showing our own focus state via
+   * `.wrap:focus-within`. */
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: none;
 }
 .input::placeholder {
   color: var(--text-mute);
+}
+/* Suppress the browser's built-in red glow on `required` inputs that are
+ * still empty. We're already drawing our own focus ring on `.wrap`, so the
+ * native invalid styling stacked underneath looked like the field was wrapped
+ * twice — the user explicitly flagged this. `:user-invalid` covers modern
+ * Chrome/Safari; the `:-moz-ui-invalid` plumbing handles Firefox; the plain
+ * `:invalid` covers the rest. */
+.input:invalid,
+.input:user-invalid,
+.input:-moz-ui-invalid {
+  outline: none;
+  box-shadow: none;
 }
 
 .lead {
