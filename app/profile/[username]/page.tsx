@@ -5,7 +5,16 @@ import { Footer } from "@/components/layout/Footer";
 import { MobileTabBar } from "@/components/layout/MobileTabBar";
 import { Nav } from "@/components/layout/Nav";
 import { Avatar, Button, Card, Chip, Icon, StatTile } from "@/components/ui";
-import { getMockProfile, getMockRecentMatches } from "@/lib/mockData";
+import {
+  getMockProfile,
+  getMockRecentMatches,
+  type City,
+  type Profile as MockProfile,
+  type RecentMatch,
+} from "@/lib/mockData";
+import { createClient } from "@/lib/supabase/server";
+import { getProfileByUsername, getRecentMatches } from "@/lib/db/queries";
+import type { Match, Profile as CloudProfile } from "@/types/database";
 import styles from "./profile.module.css";
 
 // Next.js 16: route `params` is a Promise (see AGENTS.md). The generated
@@ -15,9 +24,133 @@ interface ProfileRouteProps {
   params: Promise<{ username: string }>;
 }
 
+const CITIES: City[] = ["Almaty", "Astana", "Shymkent", "Karagandy"];
+function asCity(c: string | null | undefined): City {
+  return CITIES.includes(c as City) ? (c as City) : "Almaty";
+}
+
+function fmtJoined(iso: string): string {
+  const d = new Date(iso);
+  const month = d.toLocaleString("en-US", { month: "short" });
+  return `Joined ${month} ${d.getFullYear()}`;
+}
+
+function fmtMs(ms: number | null | undefined): string {
+  if (!ms || !Number.isFinite(ms)) return "—";
+  const s = Math.round(ms / 1000);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
+function relWhen(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  if (!Number.isFinite(diff) || diff < 0) return "";
+  const h = Math.floor(diff / 36e5);
+  if (h < 1) return `${Math.max(1, Math.floor(diff / 6e4))}m ago`;
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
+/**
+ * Compose the Profile render-model from cloud + mock. Cloud powers the core
+ * identity and stats; the things we don't yet store (per-column opening
+ * breakdown, named achievements) come from the mock so the page stays full.
+ */
+function mergeCloudProfile(cloud: CloudProfile, mock: MockProfile): MockProfile {
+  const winRate = cloud.games > 0 ? Math.round((cloud.wins / cloud.games) * 100) : 0;
+  return {
+    ...mock,
+    username: cloud.username,
+    name: cloud.display_name ?? cloud.username,
+    handle: `@${cloud.username}`,
+    city: asCity(cloud.city),
+    joined: fmtJoined(cloud.created_at),
+    isPro: cloud.is_pro,
+    elo: cloud.elo,
+    eloDelta: mock.eloDelta, // weekly delta needs an elo_snapshots lookup; mock for now
+    stats: [
+      { label: "ELO", value: String(cloud.elo), sub: mock.eloDelta + " this week" },
+      {
+        label: "Win rate",
+        value: `${winRate}%`,
+        sub: `${cloud.wins} / ${cloud.games} games`,
+      },
+      {
+        label: "Win streak",
+        value: String(cloud.streak),
+        sub: `personal best ${cloud.best_streak}`,
+        accent: cloud.streak >= 5 ? "coral" : undefined,
+      },
+      {
+        label: "Favorite opening",
+        value: cloud.favorite_col != null ? `col ${cloud.favorite_col + 1}` : "—",
+        sub: mock.stats[3]?.sub ?? "",
+      },
+      { label: "Avg game", value: fmtMs(cloud.avg_game_ms), sub: mock.stats[4]?.sub ?? "" },
+    ],
+    recentTotal: cloud.games,
+  };
+}
+
+function adaptMatch(m: Match, viewerId: string): RecentMatch {
+  const viewerIsP1 = m.player1_id === viewerId;
+  const opponentId = viewerIsP1 ? m.player2_id : m.player1_id;
+  const won =
+    (viewerIsP1 && m.result === "p1") || (!viewerIsP1 && m.result === "p2");
+  const isAi = m.mode === "solo" && opponentId === null;
+  return {
+    result: won ? "W" : "L",
+    opponentName: isAi
+      ? `${(m.ai_difficulty ?? "AI").replace(/^\w/, (c) => c.toUpperCase())} AI`
+      : "Opponent",
+    opponentUsername: undefined,
+    opponentElo: null,
+    mode:
+      m.mode === "ranked"
+        ? "Ranked"
+        : m.mode === "duel"
+          ? "Duel"
+          : isAi
+            ? `${m.ai_difficulty ?? "Hard"} AI`
+            : "Solo",
+    delta:
+      m.elo_delta != null
+        ? m.elo_delta >= 0
+          ? `+${m.elo_delta}`
+          : `−${Math.abs(m.elo_delta)}`
+        : "—",
+    length: fmtMs(m.duration_ms),
+    when: relWhen(m.ended_at ?? m.created_at),
+  };
+}
+
+async function loadProfileData(
+  username: string,
+): Promise<{ profile: MockProfile; matches: RecentMatch[] }> {
+  const fallback = {
+    profile: getMockProfile(username),
+    matches: getMockRecentMatches(username),
+  };
+  try {
+    const supabase = await createClient();
+    const cloud = await getProfileByUsername(supabase, username);
+    if (!cloud) return fallback;
+    const profile = mergeCloudProfile(cloud, fallback.profile);
+    let matches = fallback.matches;
+    try {
+      const rows = await getRecentMatches(supabase, cloud.id, 8);
+      if (rows.length > 0) matches = rows.map((m) => adaptMatch(m, cloud.id));
+    } catch {
+      /* keep mock matches */
+    }
+    return { profile, matches };
+  } catch {
+    return fallback;
+  }
+}
+
 export async function generateMetadata(props: ProfileRouteProps): Promise<Metadata> {
   const { username } = await props.params;
-  const profile = getMockProfile(username);
+  const { profile } = await loadProfileData(username);
   return {
     title: `${profile.name} (${profile.handle})`,
     description: `${profile.name} · ${profile.elo} ELO · ${profile.city}. Match history, ELO trend, and achievements on Drop4.`,
@@ -26,8 +159,7 @@ export async function generateMetadata(props: ProfileRouteProps): Promise<Metada
 
 export default async function ProfilePage(props: ProfileRouteProps) {
   const { username } = await props.params;
-  const profile = getMockProfile(username);
-  const matches = getMockRecentMatches(username);
+  const { profile, matches } = await loadProfileData(username);
 
   return (
     <>
