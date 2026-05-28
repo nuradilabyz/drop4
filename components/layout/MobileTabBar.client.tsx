@@ -43,8 +43,12 @@ export function MobileTabBarClient({ meHref, meLabel }: MobileTabBarClientProps)
   const active = activeKey(pathname, meHref);
 
   return (
-    <nav className={styles.bar} aria-label="Primary">
-      {tabs.map((t) => {
+    <>
+      {/* In-flow spacer so the previous siblings (page content) can't scroll
+          all the way down behind the fixed bar — only renders on mobile. */}
+      <div aria-hidden className={styles.spacer} />
+      <nav className={styles.bar} aria-label="Primary">
+        {tabs.map((t) => {
         const on = active === t.key;
         return (
           <Link
@@ -69,7 +73,8 @@ export function MobileTabBarClient({ meHref, meLabel }: MobileTabBarClientProps)
             <span>{t.label}</span>
           </Link>
         );
-      })}
-    </nav>
+        })}
+      </nav>
+    </>
   );
 }

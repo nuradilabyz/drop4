@@ -14,8 +14,26 @@
     grid-template-columns: repeat(4, 1fr);
     padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 10px));
     border-top: 1px solid var(--border);
-    background: color-mix(in oklab, var(--bg) 84%, transparent);
-    backdrop-filter: blur(20px);
+    /* Was: 84% opaque + 20px backdrop blur. That frosted-glass look made
+       scrolled page content visible *through* the bar — a real user spotted
+       "a hole / chart bars visible behind the tabs" on iOS. Solid bg + a
+       short shadow above gives a crisp separator and zero see-through. */
+    background: var(--bg);
+    box-shadow: 0 -1px 6px color-mix(in oklab, var(--bg) 30%, transparent);
+  }
+}
+
+/* Sibling spacer pushed below the page content on mobile so the bottom of
+   the last section isn't tucked behind the fixed tab bar. Renders only at
+   the mobile breakpoint — desktop / tablet ignore it. */
+.spacer {
+  display: none;
+}
+@media (max-width: 640px) {
+  .spacer {
+    display: block;
+    height: calc(64px + env(safe-area-inset-bottom, 0px));
+    flex-shrink: 0;
   }
 }
 
