@@ -15,7 +15,10 @@
  */
 
 const STORAGE_KEY = "drop4-music";
-const DEFAULT_VOLUME = 0.22;
+// Background bed — kept low on purpose so the lofi sits *under* gameplay
+// cues (drop/win) and never competes with conversation. Bumping this above
+// ~0.15 makes the piano feel forward instead of ambient.
+const DEFAULT_VOLUME = 0.1;
 const FADE_IN_MS = 1400;
 const FADE_OUT_MS = 700;
 

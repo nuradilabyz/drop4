@@ -170,6 +170,17 @@ export function CoachView({ matchId, isPro }: CoachViewProps) {
         return;
       }
 
+      // Resolve the viewer's chip from the persisted `human` flag rather than
+      // hard-coding "c". Duels record host=coral / guest=aqua, so an aqua
+      // guest who opened the coach used to receive narration written from
+      // coral's POV — UI said "You won" while the LLM said "You missed a
+      // win." Mirror the meIsCoral logic used by the result chip below.
+      const viewerChip: "c" | "a" =
+        match.players.a?.human === true
+          ? "a"
+          : match.players.c?.human !== false
+            ? "c"
+            : "a";
       try {
         const res = await fetch("/api/coach", {
           method: "POST",
@@ -181,7 +192,7 @@ export function CoachView({ matchId, isPro }: CoachViewProps) {
             thinkMs: match.think_ms,
             result: match.result,
             mode: match.mode,
-            you: "c",
+            you: viewerChip,
             isPro,
           }),
         });

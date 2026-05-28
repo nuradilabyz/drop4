@@ -138,7 +138,7 @@ export function useSoloGame(opts: UseSoloGameOptions): SoloGameApi {
     difficulty,
     bestOf = 1,
     isPro = false,
-    freeHints = 1,
+    freeHints = 3,
     freeThreats = 3,
     humanName = "You",
     aiName = aiDisplayName(difficulty),

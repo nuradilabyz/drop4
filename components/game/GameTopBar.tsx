@@ -3,7 +3,10 @@ import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { Logo } from "@/components/ui/Logo";
 import { SoundToggle } from "@/components/SoundToggle";
+import { MusicToggle } from "@/components/ui/MusicToggle";
 import styles from "./GameTopBar.module.css";
+
+const LOFI_TRACK = "/audio/lofi.mp3";
 
 export interface GameTopBarProps {
   /** e.g. "Ranked · Best of 5" or "Solo · Hard AI". */
@@ -53,6 +56,7 @@ export function GameTopBar({
           onClick={onSettings}
         />
         <SoundToggle size={30} />
+        <MusicToggle size={30} src={LOFI_TRACK} />
         <div className={styles.divider} />
         <Button
           variant="secondary"

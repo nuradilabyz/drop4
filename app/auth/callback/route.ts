@@ -40,22 +40,27 @@ export async function GET(request: NextRequest) {
   const nextParam = searchParams.get("next");
   const next = nextParam && nextParam.startsWith("/") ? nextParam : "/";
 
+  // Vercel terminates TLS at the edge and the inner request arrives with the
+  // pod-internal host in request.url. Resolve the user-visible origin once so
+  // both the success and the error branch redirect to the same domain — if we
+  // skipped this on the error branch a failed exchange would dump the user
+  // on the wrong host (e.g. an internal Vercel preview URL).
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const isLocal = process.env.NODE_ENV === "development";
+  const publicOrigin =
+    isLocal || !forwardedHost
+      ? origin
+      : `${request.headers.get("x-forwarded-proto") ?? "https"}://${forwardedHost}`;
+
   if (code) {
     const supabase = await createClient();
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
       const target = isFirstSignIn(data?.user) ? withWelcome(next) : next;
-      // In prod behind a proxy, prefer the forwarded host if present.
-      const forwardedHost = request.headers.get("x-forwarded-host");
-      const isLocal = process.env.NODE_ENV === "development";
-      if (isLocal || !forwardedHost) {
-        return NextResponse.redirect(`${origin}${target}`);
-      }
-      const proto = request.headers.get("x-forwarded-proto") ?? "https";
-      return NextResponse.redirect(`${proto}://${forwardedHost}${target}`);
+      return NextResponse.redirect(`${publicOrigin}${target}`);
     }
   }
 
   // No code or exchange failed.
-  return NextResponse.redirect(`${origin}/?auth_error=1`);
+  return NextResponse.redirect(`${publicOrigin}/?auth_error=1`);
 }
