@@ -282,7 +282,9 @@
 }
 .continueRow {
   display: grid;
-  grid-template-columns: 36px 1fr auto auto;
+  /* minmax(0,1fr) on the name lets the row shrink below its content instead of
+     forcing the Continue card wider than the viewport on mobile. */
+  grid-template-columns: 36px minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 14px;
   width: 100%;
@@ -360,9 +362,9 @@
 /* ── Responsive ── */
 @media (max-width: 960px) {
   .modes {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .bottom {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
