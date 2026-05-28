@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/lib/theme";
+import { FloatingMusicToggle } from "@/components/ui/FloatingMusicToggle";
 import { WelcomeToast } from "@/components/ui/WelcomeToast";
 import "./globals.css";
 
@@ -74,6 +75,7 @@ export default function RootLayout({
       </head>
       <body>
         <ThemeProvider>{children}</ThemeProvider>
+        <FloatingMusicToggle />
         <WelcomeToast />
       </body>
     </html>

@@ -1,0 +1,17 @@
+/* Hidden by default. Only shows under the same mobile breakpoint at which
+ * the desktop Nav (and its MusicToggle) goes away. Positioned bottom-right
+ * just above the MobileTabBar so it doesn't fight the four tabs for the
+ * thumb zone. */
+.wrap {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .wrap {
+    position: fixed;
+    right: 14px;
+    bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+    z-index: 40;
+    display: block;
+  }
+}

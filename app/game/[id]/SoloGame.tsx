@@ -136,11 +136,16 @@ export function SoloGame({
   );
 
   // ── Score header ──
+  // Use the persistent `series` tally regardless of `bestOf` — the previous
+  // single-game shortcut read `game.winner` for the score, which is nulled
+  // out by `resetBoard()` on rematch, so winning game 1 → clicking Rematch
+  // erased the "1" the user had just earned. The hook's series counter
+  // already increments at game-end and stays put across rematches.
   const score: GameViewProps["score"] = {
     leftLabel: "You",
-    leftScore: bestOf > 1 ? game.series.c : game.winner === "c" ? 1 : 0,
+    leftScore: game.series.c,
     rightLabel: ranked ? "Bot" : "AI",
-    rightScore: bestOf > 1 ? game.series.a : game.winner === "a" ? 1 : 0,
+    rightScore: game.series.a,
     series:
       bestOf > 1
         ? `Game ${Math.min(game.series.c + game.series.a + 1, bestOf)} of ${bestOf}`
