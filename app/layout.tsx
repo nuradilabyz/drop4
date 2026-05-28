@@ -36,6 +36,15 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  // Without these explicit values Next's defaults can land us with no
+  // viewport-fit, which is what breaks safe-area-inset on iOS Safari (and on
+  // the Telegram in-app webview that inherits its quirks): a fixed `bottom:0`
+  // bar then drifts up by the home-indicator strip and a slice of the page
+  // peeks out from underneath it. viewport-fit:cover pins the page to the
+  // physical viewport so env(safe-area-inset-*) reports real numbers.
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#f6f5f1" },
     { media: "(prefers-color-scheme: dark)", color: "#0c0c0e" },
