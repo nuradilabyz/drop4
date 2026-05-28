@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { Board } from "@/components/board/Board";
+import { FeatureGrid } from "@/components/landing/FeatureGrid";
+import { HeroBoard } from "@/components/landing/HeroBoardAutoplay";
 import { Footer } from "@/components/layout/Footer";
 import { MobileTabBar } from "@/components/layout/MobileTabBar";
 import { Nav } from "@/components/layout/Nav";
-import { Avatar, Button, Card, Chip, Icon } from "@/components/ui";
-import { BOARD_HERO } from "@/lib/sampleBoards";
+import { Button, Card, Chip, Icon } from "@/components/ui";
 import { FEATURE_CARDS, TRUST_METRICS } from "@/lib/mockData";
 import { LeaderboardPreview } from "./LeaderboardPreview";
 import styles from "./landing.module.css";
@@ -16,7 +16,7 @@ export default function Home() {
       <main className={styles.main}>
         {/* ─── Hero ─── */}
         <section className={styles.hero}>
-          <div className={styles.heroCopy}>
+          <div className={`${styles.heroCopy} ${styles.heroEntry}`}>
             <Chip
               tone="outline"
               size="md"
@@ -65,7 +65,7 @@ export default function Home() {
             <h2 className={styles.sectionTitle}>Three ways to play.</h2>
             <span className={styles.sectionAside}>No download. Browser tab to gym.</span>
           </div>
-          <div className={styles.features}>
+          <FeatureGrid>
             {FEATURE_CARDS.map((f) => (
               <Card key={f.kicker} padded={false} className={styles.featureCard}>
                 <div className={styles.featurePreview}>
@@ -83,7 +83,7 @@ export default function Home() {
                 </div>
               </Card>
             ))}
-          </div>
+          </FeatureGrid>
         </section>
 
         {/* ─── City leaderboard preview ─── */}
@@ -143,51 +143,6 @@ export default function Home() {
       <Footer />
       <MobileTabBar />
     </>
-  );
-}
-
-/* ─── Hero board with floating "live" chips ─────────────────────────────── */
-function HeroBoard() {
-  return (
-    <div className={styles.heroBoardWrap}>
-      <div className={styles.heroGlow} aria-hidden="true" />
-      <div className={styles.heroBoardTilt}>
-        <Board cells={BOARD_HERO} size="lg" nextPlayer="a" />
-
-        <div className={`${styles.floatCard} ${styles.floatThinking}`}>
-          <Avatar name="Aigerim K." size={28} />
-          <div>
-            <div className={styles.floatName}>Aigerim · 1882</div>
-            <div className={`${styles.floatMeta} mono`}>thinking…</div>
-          </div>
-          <div className={styles.thinkingDots} aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </div>
-        </div>
-
-        <div className={`${styles.floatCard} ${styles.floatBest}`}>
-          <div className={styles.bestHead}>
-            <span className={styles.bestKicker}>
-              <Icon name="bolt" size={10} color="var(--gold)" /> Best move
-            </span>
-            <Chip tone="gold" size="sm">
-              Pro
-            </Chip>
-          </div>
-          <div className={styles.bestValue}>
-            <span className={`${styles.bestCol} mono`}>Col 5</span>
-            <span className={`${styles.bestScore} mono`}>+2.4</span>
-          </div>
-        </div>
-
-        <div className={`${styles.floatTurn} mono`}>
-          <Icon name="bolt" size={12} color="var(--coral)" />
-          <span>Your turn · 0:18</span>
-        </div>
-      </div>
-    </div>
   );
 }
 
