@@ -10,13 +10,20 @@
  *
  * Autoplay note: browsers block audio playback until the user has
  * interacted with the page. We default the *preference* to ON (so a cold
- * visitor sees the toggle lit up) but call `audio.play()` defensively —
- * if the browser rejects with NotAllowedError we arm a one-shot listener
- * for the first pointerdown / touchstart / keydown anywhere on the page,
- * and start playback then. The user effectively gets autoplay the moment
- * they interact with anything (a CTA, a tab, the demo board). The only
- * way to stay silent is to explicitly hit the mute toggle — that writes
- * "off" to localStorage, which is the one value that wins over default-on.
+ * visitor sees the toggle lit up once playback actually starts) but call
+ * `audio.play()` defensively — if the browser rejects with NotAllowedError
+ * we arm a one-shot listener for the first pointerdown / touchstart /
+ * keydown anywhere on the page (except on the music toggle itself, which
+ * has its own onClick to start playback). On that gesture we retry play
+ * and notify subscribers, so the toggle UI flips to its "on" colour the
+ * instant audio actually starts. The only way to stay silent is to
+ * explicitly hit the mute toggle — that writes "off" to localStorage,
+ * which is the one value that wins over default-on.
+ *
+ * The `isPlaying` + `subscribe` pair exists so the toggle component can
+ * paint based on *actual playback*, not the persisted preference. Earlier
+ * versions painted from preference and lied to the user: after a refresh
+ * the icon read "on" while audio was actually waiting for a gesture.
  */
 
 const STORAGE_KEY = "drop4-music";
@@ -33,12 +40,20 @@ const GESTURE_EVENTS: ReadonlyArray<keyof WindowEventMap> = [
   "keydown",
 ];
 
+/** Marker attribute the MusicToggle adds to its <button>. The auto-gesture
+ *  listener skips clicks landing on this element so the toggle's own
+ *  onClick handler stays in charge of starting playback for that click. */
+const TOGGLE_ATTR = "data-music-toggle";
+
+type PlayingListener = (playing: boolean) => void;
+
 class MusicPlayer {
   private audio: HTMLAudioElement | null = null;
   private fadeRaf: number | null = null;
   /** Set while we're waiting for the first user gesture to start playback. */
   private gestureArmedSrc: string | null = null;
   private gestureHandler: ((e: Event) => void) | null = null;
+  private listeners = new Set<PlayingListener>();
 
   /**
    * Should music be on for this visitor?
@@ -46,8 +61,7 @@ class MusicPlayer {
    * Cold visits + anything other than the explicit "off" sentinel return
    * true. We only stay silent for users who actively muted (`disable()` →
    * `persist("off")`). This is what lets the page feel like it autoplays
-   * — the toggle paints lit up on first paint, then the first interaction
-   * starts the audio.
+   * — the first interaction starts the audio and the toggle paints lit up.
    */
   isPreferredOn(): boolean {
     if (typeof window === "undefined") return false;
@@ -58,6 +72,19 @@ class MusicPlayer {
       // user can still mute for the session, just nothing persists.
       return true;
     }
+  }
+
+  /** True only when the underlying <audio> element is actively playing. */
+  isPlaying(): boolean {
+    return this.audio !== null && !this.audio.paused;
+  }
+
+  /** Subscribe to playback-state changes. Returns an unsubscribe fn. */
+  subscribe(fn: PlayingListener): () => void {
+    this.listeners.add(fn);
+    return () => {
+      this.listeners.delete(fn);
+    };
   }
 
   /** Begin playback (creating the <audio> on first call). Idempotent. */
@@ -77,6 +104,7 @@ class MusicPlayer {
         () => {
           this.disarmGesture();
           this.fade(DEFAULT_VOLUME, FADE_IN_MS);
+          this.notify();
         },
         () => {
           // Autoplay blocked — wait for a user gesture and try again.
@@ -86,6 +114,7 @@ class MusicPlayer {
     } else {
       // Legacy sync path — assume success.
       this.fade(DEFAULT_VOLUME, FADE_IN_MS);
+      this.notify();
     }
   }
 
@@ -96,21 +125,32 @@ class MusicPlayer {
     if (!this.audio) return;
     this.fade(0, FADE_OUT_MS, () => {
       this.audio?.pause();
+      this.notify();
     });
   }
 
   /**
    * After an autoplay rejection, listen for the first user gesture anywhere
    * on the page and retry `enable`. Capture-phase so we win against any
-   * preventDefault/stopPropagation deeper in the tree. We use `{ once: true }`
-   * on each listener for symmetry, but also call disarm explicitly in case
-   * the user mutes before the gesture lands.
+   * preventDefault/stopPropagation deeper in the tree. We skip clicks that
+   * landed on the music toggle itself — its onClick handler is the proper
+   * place to start playback for that click, and letting both fire would
+   * race (gesture-handler starts music, then onClick reads "playing" and
+   * mutes it again).
    */
   private armGesture(src: string): void {
     if (this.gestureArmedSrc === src) return; // already waiting
-    this.disarmGesture(); // clear any stale arming for a previous src
+    this.disarmGesture();
     this.gestureArmedSrc = src;
-    const handler = () => {
+    const handler = (e: Event) => {
+      const target = e.target;
+      if (
+        target instanceof Element &&
+        target.closest(`[${TOGGLE_ATTR}]`) !== null
+      ) {
+        // Toggle owns this click — bail and let it call enable() itself.
+        return;
+      }
       const saved = this.gestureArmedSrc;
       this.disarmGesture();
       // Respect a mute that happened between arming and the gesture.
@@ -119,7 +159,7 @@ class MusicPlayer {
     };
     this.gestureHandler = handler;
     for (const ev of GESTURE_EVENTS) {
-      window.addEventListener(ev, handler, { capture: true, once: true });
+      window.addEventListener(ev, handler, { capture: true });
     }
   }
 
@@ -133,6 +173,11 @@ class MusicPlayer {
     }
     this.gestureHandler = null;
     this.gestureArmedSrc = null;
+  }
+
+  private notify(): void {
+    const playing = this.isPlaying();
+    for (const fn of this.listeners) fn(playing);
   }
 
   private fade(target: number, ms: number, done?: () => void) {
@@ -166,3 +211,5 @@ class MusicPlayer {
 }
 
 export const musicPlayer = new MusicPlayer();
+
+export const MUSIC_TOGGLE_ATTR = TOGGLE_ATTR;
