@@ -67,3 +67,17 @@ export function invertResult(result: EloResult): EloResult {
   if (result === "loss") return "win";
   return "draw";
 }
+
+/**
+ * Synthetic Elo rating per AI difficulty tier. Used by both the lobby (so the
+ * Ranked tile can show the bot's effective rating next to the player's) and
+ * the finalize route (so the bot opponent has a real number to compute the
+ * delta against). Chess-club analogues: easy ≈ beginner, normal ≈ casual,
+ * hard ≈ strong club, insane ≈ master.
+ */
+export const BOT_ELO_BY_DIFFICULTY: Record<string, number> = {
+  easy: 900,
+  normal: 1300,
+  hard: 1800,
+  insane: 2300,
+};

@@ -25,7 +25,12 @@ import {
 } from "@/engine/types";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { computeEloDelta, invertResult, type EloResult } from "@/lib/elo";
+import {
+  BOT_ELO_BY_DIFFICULTY,
+  computeEloDelta,
+  invertResult,
+  type EloResult,
+} from "@/lib/elo";
 import type { MatchInsert, MatchResult, ProfileUpdate } from "@/types/database";
 
 export const runtime = "nodejs";
@@ -143,12 +148,58 @@ export async function POST(request: NextRequest) {
     ended_at: new Date().toISOString(),
   };
 
-  // Ranked Elo only applies to two real authenticated players.
-  const isRanked = body.mode === "ranked" && !!player2Id;
+  // Ranked Elo applies in two shapes:
+  //   1. Two real authenticated players  → both profiles move (PvP queue,
+  //      not wired yet but route stays ready for it).
+  //   2. One real player + the calibrated bot (no player2_id, ai_difficulty
+  //      set) → only the human moves, against a synthetic opponent whose Elo
+  //      comes from BOT_ELO_BY_DIFFICULTY.
+  // The pure Elo math in lib/elo.ts already accounts for the rating gap and
+  // the human's own K-factor, so the delta is small for an easy bot, generous
+  // for an Insane upset, and properly punishing if a high-Elo player loses
+  // to a Normal bot.
+  const isRankedPvP = body.mode === "ranked" && !!player2Id;
+  const botElo =
+    body.mode === "ranked" && !player2Id && body.ai_difficulty
+      ? BOT_ELO_BY_DIFFICULTY[body.ai_difficulty]
+      : undefined;
+  const isRankedSolo = botElo !== undefined;
 
   let eloDelta: number | null = null;
 
-  if (isRanked) {
+  if (isRankedSolo) {
+    // Single real player vs synthetic bot. Fetch only player1.
+    const { data: p1, error: profErr } = await admin
+      .from("profiles")
+      .select("id, elo, games, wins, losses, draws, streak, best_streak")
+      .eq("id", body.player1_id)
+      .maybeSingle();
+    if (profErr) {
+      return NextResponse.json({ error: profErr.message }, { status: 500 });
+    }
+    if (!p1) {
+      return NextResponse.json(
+        { error: "Player profile not found" },
+        { status: 400 },
+      );
+    }
+    const humanResult: EloResult =
+      result === "p1" ? "win" : result === "draw" ? "draw" : "loss";
+    const delta = computeEloDelta(
+      { elo: p1.elo, games: p1.games },
+      { elo: botElo as number },
+      humanResult,
+    );
+    eloDelta = delta;
+    matchRow.elo_delta = delta;
+    const upd = await applyPlayerUpdate(admin, p1, delta, humanResult);
+    if (upd.error) {
+      return NextResponse.json(
+        { error: `Failed to update profile: ${upd.error.message}` },
+        { status: 500 },
+      );
+    }
+  } else if (isRankedPvP) {
     // Fetch both profiles for current Elo + games (provisional K-factor).
     const { data: profiles, error: profErr } = await admin
       .from("profiles")

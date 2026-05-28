@@ -7,11 +7,12 @@
  * false (the page passes it explicitly).
  */
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSoloGame, formatClock, formatThink } from "@/lib/game/useSoloGame";
 import { getMatch } from "@/lib/game/matchStore";
 import { copyShareLink } from "@/lib/share";
+import { createClient } from "@/lib/supabase/client";
 import { Toast, useToast } from "@/components/ui";
 import type { MoveRailItem, PlayerPaneProps } from "@/components/game/PlayerPane";
 import { GameView, type GameViewProps } from "@/components/game/GameView";
@@ -83,6 +84,60 @@ export function SoloGame({
   const humanTurn = game.status === "playing" && game.current === "c";
 
   const { message: toast, show: showToast } = useToast();
+
+  // Ranked finalize: when a ranked solo game ends, POST the movelist to the
+  // server-authoritative finalize route. The server replays it for anti-cheat,
+  // synthesises the bot opponent's Elo from difficulty, computes the delta
+  // with the same K-factor math used for PvP, persists the new Elo on the
+  // user's profile, and returns the delta — which we surface as a toast so
+  // the player sees their rating move in real time. The ref guard makes the
+  // call exactly once per finished game (status flicker on rematch reset
+  // would otherwise re-fire it).
+  const finalizedForRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!ranked || !finished || !game.result) return;
+    const fingerprint = `${id}:${game.movelist.length}:${game.result}`;
+    if (finalizedForRef.current === fingerprint) return;
+    finalizedForRef.current = fingerprint;
+
+    const movelist = game.movelist.slice();
+    const thinkMs = game.thinkMs.slice();
+    const elapsedMs = game.elapsedMs;
+    void (async () => {
+      try {
+        const supabase = createClient();
+        const { data: auth } = await supabase.auth.getUser();
+        if (!auth.user) return; // anonymous players don't get ranked Elo
+        const res = await fetch("/api/match/finalize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            mode: "ranked",
+            movelist,
+            think_ms: thinkMs,
+            player1_id: auth.user.id,
+            ai_difficulty: difficulty,
+            durationMs: elapsedMs,
+          }),
+        });
+        if (!res.ok) return; // 401/403/500 — fail silently, game still saved locally
+        const json: { match?: { elo_delta?: number | null } } = await res.json();
+        const delta = json.match?.elo_delta;
+        if (typeof delta === "number") {
+          const sign = delta > 0 ? "+" : "";
+          const label =
+            game.result === "c"
+              ? "Ranked win"
+              : game.result === "a"
+                ? "Ranked loss"
+                : "Ranked draw";
+          showToast(`${label} ${sign}${delta} Elo`);
+        }
+      } catch {
+        // Network / server error — best-effort; local progress is unaffected.
+      }
+    })();
+  }, [ranked, finished, game.result, game.movelist, game.thinkMs, game.elapsedMs, id, difficulty, showToast]);
 
   const onHint = useCallback(() => {
     void game.requestHint();

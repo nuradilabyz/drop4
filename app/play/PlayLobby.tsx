@@ -7,6 +7,7 @@ import { Avatar, Button, Card, Chip, Icon, Toast, useToast } from "@/components/
 import { BOARD_COACH } from "@/lib/sampleBoards";
 import { DAILY_PUZZLE } from "@/lib/mockData";
 import type { Difficulty } from "@/engine/types";
+import { BOT_ELO_BY_DIFFICULTY } from "@/lib/elo";
 import { listProgress, type ProgressRecord } from "@/lib/game/matchStore";
 import { DifficultySelector } from "./DifficultySelector";
 import styles from "./play.module.css";
@@ -39,7 +40,14 @@ function opponentName(p: ProgressRecord): string {
   return opp?.name ?? "Opponent";
 }
 
-export function PlayLobby() {
+export interface PlayLobbyProps {
+  /** Server-fetched profile Elo for the signed-in viewer, or null for
+   *  anonymous/no-profile/Supabase-unconfigured cases. Used by the Ranked
+   *  tile to show real numbers instead of the prior hardcoded mock. */
+  initialUserElo?: number | null;
+}
+
+export function PlayLobby({ initialUserElo = null }: PlayLobbyProps = {}) {
   const router = useRouter();
   const [difficulty, setDifficulty] = useState<Difficulty>("hard");
   const [progress, setProgress] = useState<ProgressRecord[]>([]);
@@ -76,9 +84,11 @@ export function PlayLobby() {
   };
 
   const startRanked = () => {
-    // Fallback: ranked matchmaking isn't wired yet, so we drop into a solo game
-    // vs a calibrated bot (labelled as such in the game top bar).
-    router.push(`/game/${newId()}?mode=ranked&difficulty=hard`);
+    // Until PvP matchmaking lands, ranked = solo vs a calibrated bot whose
+    // Elo comes from the difficulty selector (see BOT_ELO_BY_DIFFICULTY in
+    // lib/elo.ts). The finalize route reads ai_difficulty back to compute
+    // the rating delta for the player's profile.
+    router.push(`/game/${newId()}?mode=ranked&difficulty=${difficulty}`);
   };
 
   const createRoom = () => {
@@ -150,22 +160,37 @@ export function PlayLobby() {
           <div className={styles.modeNote}>Realtime · play as a guest</div>
         </div>
 
-        {/* ── Calibrated AI match ─────────────────────────────────────
-            Was originally labelled "Quick match" + "find a stranger near
-            your ELO" with a fake 1798 number, but real player-vs-player
-            matchmaking isn't wired yet — clicking just spawned a solo
-            game against a calibrated bot. The fake ELO also contradicted
-            the user's real profile ELO. Until a true matchmaking queue
-            lands, this tile is honest about what it does: a solo run
-            against a bot tuned to challenge you. */}
+        {/* ── Ranked vs calibrated bot ────────────────────────────────
+            Was originally labelled "Quick match" with a hardcoded ELO
+            (1798) and copy that lied about real matchmaking. Now honest:
+            this fires a real ranked match against a synthetic-Elo bot
+            (lib/elo + finalize route compute the delta with K-factor and
+            rating-gap math, so a tough win on Insane is meaningful and
+            losing to Normal hurts properly). PvP matchmaking will plug
+            into the same finalize endpoint when wired. */}
         <div className={styles.mode}>
           <span className={styles.accent} data-accent="coral" />
           <div className={styles.modeKicker} data-accent="coral">Ranked</div>
-          <h3 className={styles.modeTitle}>Calibrated AI match</h3>
+          <h3 className={styles.modeTitle}>Ranked vs calibrated bot</h3>
           <p className={styles.modeBody}>
-            A single ranked run against a bot tuned to push you. Win count
-            feeds your profile streak.
+            One run, real Elo on the line. The bot scales with the
+            difficulty you set — your delta matches the gap.
           </p>
+
+          <div className={styles.eloBox}>
+            <div className={styles.eloHead}>
+              <span>Your Elo</span>
+              <span>Bot Elo · {difficulty}</span>
+            </div>
+            <div className={styles.eloRow}>
+              <span className={`${styles.eloValue} mono`}>
+                {initialUserElo ?? "—"}
+              </span>
+              <span className={`${styles.eloRange} mono`}>
+                {BOT_ELO_BY_DIFFICULTY[difficulty]}
+              </span>
+            </div>
+          </div>
 
           <Button
             variant="secondary"
@@ -176,7 +201,11 @@ export function PlayLobby() {
           >
             Start ranked
           </Button>
-          <div className={styles.modeNote}>Solo · calibrated bot · counts toward streak</div>
+          <div className={styles.modeNote}>
+            {initialUserElo == null
+              ? "Sign in to record Elo · counts toward streak"
+              : "Win/loss writes Elo to your profile"}
+          </div>
         </div>
       </div>
 
