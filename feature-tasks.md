@@ -4,8 +4,8 @@
 
 ## Open
 
-- [ ] **Фоновая музыка** — тихий ambient-саундтрек на лендинге и/или во время партии. Toggle в settings (по умолчанию выключено, чтобы первый визит не пугал), выбор хранится в `localStorage`. Тех. план: 1–2 short loop'а (CC0 / самописное), WebAudio API, fade in/out, общая mute-кнопка где-то рядом с ThemeToggle.
+_(пусто)_
 
 ## Done
 
-_(пусто)_
+- [x] **Фоновая музыка** — HoliznaCC0 "One Night In France" (CC0, 3:14, lofi piano) в `public/audio/lofi.mp3`, 128 kbps ~3MB. `MusicToggle` в Nav рядом с ThemeToggle (volume / mute icon, coral в активном состоянии). Singleton `musicPlayer` с fade in (1.4s) / fade out (0.7s), default volume 22%, состояние в localStorage `drop4-music`. Default OFF на холодном визите — браузеры всё равно блокируют autoplay без user gesture.

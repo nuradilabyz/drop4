@@ -1,7 +1,16 @@
 import Link from "next/link";
-import { Avatar, Button, Icon, Logo, ThemeToggle } from "@/components/ui";
+import {
+  Avatar,
+  Button,
+  Icon,
+  Logo,
+  MusicToggle,
+  ThemeToggle,
+} from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import styles from "./Nav.module.css";
+
+const LOFI_TRACK = "/audio/lofi.mp3";
 
 export interface NavProps {
   /** Highlights the matching link. */
@@ -85,6 +94,7 @@ export async function Nav({ active, className }: NavProps) {
         <Button variant="primary" size="sm" href="/play" iconRight={<Icon name="arrow" size={13} />}>
           Play
         </Button>
+        <MusicToggle size={34} src={LOFI_TRACK} />
         <ThemeToggle size={34} />
         {me ? (
           <Link href={me.href} aria-label={`Your profile (${me.name})`}>

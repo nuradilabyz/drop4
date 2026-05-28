@@ -16,4 +16,6 @@ export { StatTile } from "./StatTile";
 export type { StatTileProps } from "./StatTile";
 export { ThemeToggle } from "./ThemeToggle";
 export type { ThemeToggleProps } from "./ThemeToggle";
+export { MusicToggle } from "./MusicToggle";
+export type { MusicToggleProps } from "./MusicToggle";
 export { Toast, useToast } from "./Toast";
