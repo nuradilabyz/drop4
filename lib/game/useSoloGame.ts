@@ -178,8 +178,13 @@ export function useSoloGame(opts: UseSoloGameOptions): SoloGameApi {
   const [elapsedMs, setElapsedMs] = useState(0);
   const [turnMs, setTurnMs] = useState(0);
 
-  // The player to move derives from the board; frozen visually at game end.
-  const current = useMemo<Player>(() => playerToMove(cells), [cells]);
+  // The player to move derives from the board *and* the starter — without the
+  // starter, move-count parity says "aqua" after the AI's first move of an
+  // AI-opened game (rematch), and the human is locked out forever.
+  const current = useMemo<Player>(
+    () => playerToMove(cells, starter),
+    [cells, starter],
+  );
 
   // Refs for timing a turn / a move's think duration without re-rendering.
   // Initialized to 0 (impure Date.now() must not run during render) and set on
@@ -232,7 +237,7 @@ export function useSoloGame(opts: UseSoloGameOptions): SoloGameApi {
         players: [players.human, players.ai],
         movelist: nextMoves,
         starter,
-        toMove: playerToMove(nextCells),
+        toMove: playerToMove(nextCells, starter),
         moves: nextMoves.length,
         updatedAt: new Date().toISOString(),
       });

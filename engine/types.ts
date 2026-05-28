@@ -65,10 +65,23 @@ export function canDrop(cells: Cells, col: number): boolean {
   return col >= 0 && col < COLS && columnHeight(cells, col) < ROWS;
 }
 
-/** The player to move given how many discs are on the board ('c' moves first). */
-export function playerToMove(cells: Cells): Player {
+/**
+ * Whose turn it is given a board state and the game's starter.
+ *
+ * Move-count parity tells you the *parity* of the next move, but which player
+ * that parity maps to depends on who opened the game. Default `starter = "c"`
+ * preserves the original assumption — and the engine's internal callers in
+ * search/threats only ever reason about a single hypothetical position so it
+ * works unchanged for them. Game-state callers that can face an aqua-started
+ * game (e.g. the solo hook after a rematch flips the starter) MUST pass the
+ * actual starter, otherwise the player-to-move is wrong on every even move
+ * count of an aqua-started game (board locks: human can't click because the
+ * `current` derivation reports the AI as still being to move).
+ */
+export function playerToMove(cells: Cells, starter: Player = "c"): Player {
   const count = cells.reduce((n, c) => n + c.length, 0);
-  return count % 2 === 0 ? "c" : "a";
+  const opponent: Player = starter === "c" ? "a" : "c";
+  return count % 2 === 0 ? starter : opponent;
 }
 
 /** Returns a new board with `player`'s disc dropped into `col` (no legality check). */
