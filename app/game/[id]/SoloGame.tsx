@@ -10,6 +10,9 @@
 import { useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useSoloGame, formatClock, formatThink } from "@/lib/game/useSoloGame";
+import { getMatch } from "@/lib/game/matchStore";
+import { copyShareLink } from "@/lib/share";
+import { Toast, useToast } from "@/components/ui";
 import type { MoveRailItem, PlayerPaneProps } from "@/components/game/PlayerPane";
 import { GameView, type GameViewProps } from "@/components/game/GameView";
 import type { Coord, Difficulty, Movelist, Player } from "@/engine/types";
@@ -92,17 +95,16 @@ export function SoloGame({
     router.push(`/coach/${savedId}`);
   }, [game, router]);
 
-  const onShare = useCallback(() => {
-    // Stubbed for the share/clipboard agent: copy a simple result line.
-    if (typeof navigator !== "undefined" && navigator.clipboard) {
-      const moves = game.movelist.length;
-      void navigator.clipboard
-        .writeText(
-          `I just played a ${game.difficulty} Drop4 game (${moves} moves) — drop4.gg`,
-        )
-        .catch(() => {});
-    }
-  }, [game]);
+  const { message: toast, show: showToast } = useToast();
+
+  const onShare = useCallback(async () => {
+    // Persist the canonical finished record (reuses the coach snapshot path),
+    // then copy its public /m/<token> link — it unfurls as the OG match card.
+    const savedId = game.saveForCoach();
+    const match = getMatch(savedId);
+    const ok = match ? await copyShareLink(match) : false;
+    showToast(ok ? "Share link copied ✦ paste it anywhere" : "Couldn’t copy link");
+  }, [game, showToast]);
 
   // ── PlayerPanes ──
   const left: PlayerPaneProps = useMemo(
@@ -173,6 +175,7 @@ export function SoloGame({
       : `Solo · ${game.players.ai.name}`;
 
   return (
+    <>
     <GameView
       modeLabel={modeLabel}
       left={left}
@@ -209,5 +212,7 @@ export function SoloGame({
         rematchLabel,
       }}
     />
+    <Toast message={toast} />
+    </>
   );
 }

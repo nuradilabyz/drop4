@@ -15,9 +15,11 @@ import { useRouter } from "next/navigation";
 import { GameView, type GameViewProps } from "@/components/game/GameView";
 import type { MoveRailItem, PlayerPaneProps } from "@/components/game/PlayerPane";
 import type { WinBannerProps } from "@/components/game/WinBanner";
-import { Chip, Icon } from "@/components/ui";
+import { Chip, Icon, Toast, useToast } from "@/components/ui";
 import { RoomStatus, SpectatorBadge, WaitingRoom } from "@/components/duel";
 import { useDuelGame } from "@/lib/game/useDuelGame";
+import { getMatch } from "@/lib/game/matchStore";
+import { copyShareLink, copyText } from "@/lib/share";
 import type { Coord, Movelist, Player } from "@/engine/types";
 import styles from "@/components/duel/duel.module.css";
 
@@ -57,11 +59,25 @@ export function DuelRoom({ slug, spectate }: DuelRoomProps) {
   const router = useRouter();
   const game = useDuelGame({ slug, spectate, name: spectate ? "Watcher" : "You" });
 
-  const onShare = useCallback(() => {
-    if (typeof navigator !== "undefined" && navigator.clipboard && game.shareUrl) {
-      void navigator.clipboard.writeText(game.shareUrl).catch(() => {});
+  const { message: toast, show: showToast } = useToast();
+
+  const onShare = useCallback(async () => {
+    // Finished duel → share the OG result card. Live / waiting → share the room
+    // invite link so a friend can join (or spectate).
+    if (game.phase === "finished") {
+      const id = game.saveForCoach();
+      const match = id ? getMatch(id) : null;
+      if (match) {
+        const ok = await copyShareLink(match);
+        showToast(ok ? "Result link copied ✦" : "Couldn’t copy link");
+        return;
+      }
     }
-  }, [game.shareUrl]);
+    const ok = game.shareUrl ? await copyText(game.shareUrl) : false;
+    showToast(
+      ok ? "Invite link copied ✦ send it to a friend" : "Couldn’t copy link",
+    );
+  }, [game, showToast]);
 
   const onOpenCoach = useCallback(() => {
     const id = game.saveForCoach();
@@ -216,6 +232,7 @@ export function DuelRoom({ slug, spectate }: DuelRoomProps) {
   const canPlay = !isSpectator && game.myTurn && !finished;
 
   return (
+    <>
     <GameView
       modeLabel={modeLabel}
       left={left}
@@ -252,5 +269,7 @@ export function DuelRoom({ slug, spectate }: DuelRoomProps) {
         rematchLabel: game.rematchOffered ? "Accept rematch" : "Rematch",
       }}
     />
+    <Toast message={toast} />
+    </>
   );
 }

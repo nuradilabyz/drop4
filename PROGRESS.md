@@ -16,10 +16,10 @@ Repo: https://github.com/nuradilabyz/drop4 · 21 routes · `tsc` + `next build` 
 - **P3 Creative** — OG match-card route + `/m/[token]` share page, WebAudio sound + toggle, daily puzzle page.
 - **Auth** — `/login` magic-link + Google.
 - **P4 verification + fixes** — played a solo game (AI responds, win detection ✓), exercised the coach (template narration, eval bar, blunder detection ✓). Fixed: board width collapse in centered flex (was unclickable in-game), coach `/api/coach` 400 (players array→{c,a}), mate-eval display "+M9993"→"+M". Wired sound (drop/win) + SoundToggle. Mobile pass: game + landing overflow fixed; all screens fit at 390px.
+- **P4 share wiring** — in-game "Share" now copies the real `/m/<token>` OG-card link (solo: result card; duel: invite link live → result card on finish) via `lib/share.copyShareLink`, with a reusable `Toast` ("Share link copied ✦"). Verified: toast fires, `/m/<token>` → 200, `/api/og` → 200 image/png.
 
 ### Known / deferred (non-blocking)
-- In-game "Share" button still copies a result line; the OG-card share infra (`/api/og`, `/m/[token]`, `lib/share.copyShareLink`) is built but not yet wired to that button.
-- Local Supabase couldn't run overnight (host disk was ~100% full → Docker Desktop failed). The schema/migrations are correct and apply with `supabase start` once disk is freed. See MORNING.md.
+- Local Supabase couldn't run overnight (host disk was ~100% full → Docker Desktop failed). The schema/migrations are correct and apply with `supabase start` once disk is freed, OR via `supabase db push --db-url` against a hosted project (no Docker). See MORNING.md.
 - Deploy needs the user's Supabase/Vercel accounts + keys (see MORNING.md / README).
 
 ### Commits
