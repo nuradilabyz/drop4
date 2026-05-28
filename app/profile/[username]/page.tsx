@@ -421,7 +421,10 @@ export default async function ProfilePage(props: ProfileRouteProps) {
                     By column
                   </Chip>
                 </div>
-                <ColumnHeatmap columns={profile.openingByColumn} />
+                <ColumnHeatmap
+                  columns={profile.openingByColumn}
+                  favoriteColumn={favoriteColumnOf(profile)}
+                />
               </Card>
             ) : null}
 
@@ -463,6 +466,19 @@ export default async function ProfilePage(props: ProfileRouteProps) {
       <MobileTabBar />
     </>
   );
+}
+
+/**
+ * Pull the 1-based favourite column out of the same "Favorite opening"
+ * StatTile the chart must agree with (its value reads `col N`). Returning
+ * this to ColumnHeatmap guarantees the highlighted bar matches the tile
+ * whenever there IS distribution data; with all-zero data the chart shows
+ * its empty state and ignores this value.
+ */
+function favoriteColumnOf(profile: MockProfile): number | null {
+  const tile = profile.stats.find((s) => s.label === "Favorite opening");
+  const match = tile?.value.match(/col\s+(\d+)/i);
+  return match ? Number(match[1]) : null;
 }
 
 function accentVar(accent?: "coral" | "aqua" | "gold"): string {

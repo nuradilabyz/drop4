@@ -1,17 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTheme } from "@/lib/theme";
+import { useStandaloneTheme, useThemeOptional } from "@/lib/theme";
 import { Icon } from "./Icon";
 
 export interface ThemeToggleProps {
   size?: number;
   className?: string;
+  /**
+   * When true, drive theme via the provider-free controller instead of the
+   * <ThemeProvider> context. Used by the mobile floating cluster, which mounts
+   * outside the provider subtree. Same DOM/storage semantics either way.
+   */
+  standalone?: boolean;
 }
 
 /** Round ghost button that flips light/dark. Renders a stable icon until mounted. */
-export function ThemeToggle({ size = 34, className }: ThemeToggleProps) {
-  const { theme, toggle } = useTheme();
+export function ThemeToggle({ size = 34, className, standalone = false }: ThemeToggleProps) {
+  // Hooks must be called unconditionally; pick the active source by `standalone`.
+  const ctx = useThemeOptional();
+  const standaloneCtx = useStandaloneTheme();
+  const { theme, toggle } = standalone || !ctx ? standaloneCtx : ctx;
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 

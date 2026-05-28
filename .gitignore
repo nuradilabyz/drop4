@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# QA test harness (local Playwright tooling, not app code)
+qa/

@@ -181,7 +181,7 @@ export function LeaderboardView() {
               </div>
               <div className={styles.podiumPlayer}>
                 <Avatar name={p.name} size={36} />
-                <div>
+                <div className={styles.podiumMeta}>
                   <div className={styles.podiumName}>{p.name}</div>
                   <div className={`${styles.podiumElo} mono`}>{p.elo}</div>
                 </div>

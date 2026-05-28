@@ -76,3 +76,41 @@ export function useTheme(): ThemeContextValue {
   if (!ctx) throw new Error("useTheme must be used within <ThemeProvider>");
   return ctx;
 }
+
+/** Non-throwing context reader: returns null when no <ThemeProvider> is above. */
+export function useThemeOptional(): ThemeContextValue | null {
+  return useContext(ThemeContext);
+}
+
+/**
+ * Provider-free theme controller. Same semantics as the context (`data-theme`
+ * on <html> + `THEME_STORAGE_KEY` persistence + the same pre-paint bootstrap),
+ * just without requiring a surrounding <ThemeProvider>. Needed for controls
+ * that mount outside the provider subtree (e.g. the global floating cluster in
+ * app/layout.tsx, which renders after </ThemeProvider>). The two stay in lock-
+ * step because they both write the single source of truth — the DOM attribute.
+ */
+export function useStandaloneTheme(): ThemeContextValue {
+  const [theme, setThemeState] = useState<Theme>("dark");
+
+  useEffect(() => {
+    setThemeState(readDomTheme());
+  }, []);
+
+  const setTheme = useCallback((t: Theme) => {
+    document.documentElement.dataset.theme = t;
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, t);
+    } catch {
+      /* storage may be unavailable; the attribute is still set */
+    }
+    setThemeState(t);
+  }, []);
+
+  const toggle = useCallback(
+    () => setTheme(readDomTheme() === "light" ? "dark" : "light"),
+    [setTheme],
+  );
+
+  return { theme, setTheme, toggle };
+}

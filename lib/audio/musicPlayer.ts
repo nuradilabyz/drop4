@@ -56,6 +56,11 @@ class MusicPlayer {
   private fadeRaf: number | null = null;
   private gestureHandler: ((e: Event) => void) | null = null;
   private listeners = new Set<PlayingListener>();
+  /** Last src handed to enable(); lets visibility/recovery paths re-arm
+   *  even after the audio element was torn down by a rejected play(). */
+  private lastSrc: string | null = null;
+  /** Guard so we only ever attach one visibilitychange listener. */
+  private visibilityHandler: (() => void) | null = null;
 
   isPreferredOn(): boolean {
     if (typeof window === "undefined") return false;
@@ -92,12 +97,17 @@ class MusicPlayer {
   enable(src: string): void {
     if (typeof window === "undefined") return;
     this.persist("on");
+    this.lastSrc = src;
+    this.armVisibilityRecovery();
 
     if (!this.audio) {
       const a = new Audio(src);
       a.loop = true;
       a.preload = "auto";
       a.muted = true; // Muted autoplay is permitted everywhere.
+      // iOS Safari refuses inline playback (and silently fails play())
+      // without this; it also keeps audio off the fullscreen player.
+      a.setAttribute("playsinline", "");
       a.volume = DEFAULT_VOLUME;
       this.audio = a;
 
@@ -225,6 +235,43 @@ class MusicPlayer {
       window.removeEventListener(ev, this.gestureHandler, { capture: true });
     }
     this.gestureHandler = null;
+  }
+
+  /**
+   * If the user wants music but it isn't currently audible (cold load,
+   * blocked autoplay, lost gesture window, or a remount after navigation),
+   * attempt to make it audible again. Safe to call repeatedly: when audio
+   * already exists it unmutes/resumes; otherwise it recreates the element
+   * via enable(). When the browser still blocks us, enable()/unmuteAndPlay()
+   * re-arm the gesture path so the *next* interaction retries.
+   */
+  resumeIfPreferred(): void {
+    if (typeof window === "undefined") return;
+    if (!this.isPreferredOn()) return;
+    if (this.isPlaying()) return;
+    const src = this.lastSrc;
+    if (!src) return;
+    if (this.audio) {
+      this.unmuteAndPlay();
+    } else {
+      this.enable(src);
+    }
+  }
+
+  /**
+   * Returning to a backgrounded tab can leave us muted/paused with the
+   * gesture listener already consumed. Re-attempt playback when the tab
+   * becomes visible. Idempotent — guarded so we never stack listeners.
+   */
+  private armVisibilityRecovery(): void {
+    if (typeof document === "undefined") return;
+    if (this.visibilityHandler) return;
+    const handler = () => {
+      if (document.visibilityState !== "visible") return;
+      this.resumeIfPreferred();
+    };
+    this.visibilityHandler = handler;
+    document.addEventListener("visibilitychange", handler);
   }
 
   private notify(): void {

@@ -61,3 +61,18 @@
   color: var(--coral);
   font-weight: 500;
 }
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  padding: 20px 16px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+}

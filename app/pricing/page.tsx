@@ -3,12 +3,8 @@ import { Footer } from "@/components/layout/Footer";
 import { MobileTabBar } from "@/components/layout/MobileTabBar";
 import { Nav } from "@/components/layout/Nav";
 import { Chip, Icon } from "@/components/ui";
-import {
-  PRICING_COMPARISON,
-  PRICING_FAQ,
-  PRICING_TIERS,
-  type PricingTier,
-} from "@/lib/mockData";
+import { PRICING_COMPARISON, PRICING_FAQ, PRICING_TIERS } from "@/lib/mockData";
+import { PricingPlans } from "./PricingPlans";
 import styles from "./pricing.module.css";
 
 export const metadata: Metadata = {
@@ -36,11 +32,7 @@ export default function PricingPage() {
           </p>
         </div>
 
-        <div className={styles.plans}>
-          {PRICING_TIERS.map((tier) => (
-            <PlanCard key={tier.id} tier={tier} />
-          ))}
-        </div>
+        <PricingPlans tiers={PRICING_TIERS} />
 
         {/* Feature comparison */}
         <div className={styles.compareWrap}>
@@ -97,59 +89,4 @@ function cellClass(
 ): string {
   // Numeric / symbol values use mono; em-dash and prose use sans.
   return value === "—" ? s.cellSans : `${s.cellMono} mono`;
-}
-
-function PlanCard({ tier }: { tier: PricingTier }) {
-  const { highlighted } = tier;
-  // TODO: wire to Stripe checkout — the billing agent builds /api/stripe/checkout.
-  const cta =
-    tier.checkoutHref !== null ? (
-      <a
-        href={tier.checkoutHref}
-        className={[styles.cta, tier.ctaVariant === "primary" ? styles.ctaPrimary : styles.ctaOutline]
-          .filter(Boolean)
-          .join(" ")}
-      >
-        {tier.cta}
-      </a>
-    ) : (
-      <button
-        type="button"
-        disabled
-        className={[styles.cta, styles.ctaOutline, styles.ctaDisabled].join(" ")}
-      >
-        {tier.cta}
-      </button>
-    );
-
-  return (
-    <div className={[styles.plan, highlighted && styles.planHi].filter(Boolean).join(" ")}>
-      {highlighted && <span className={styles.popular}>Most popular</span>}
-      <div className={styles.planName}>{tier.name}</div>
-      <div className={styles.priceRow}>
-        <span className={`${styles.price} mono`}>{tier.price}</span>
-        <span className={styles.per}>{tier.per}</span>
-      </div>
-      <p className={styles.planDesc}>{tier.desc}</p>
-      <div className={styles.featureList}>
-        {tier.features.map((f) => (
-          <div key={f.text} className={styles.featureItem}>
-            <span
-              className={[
-                styles.bullet,
-                f.icon === "spark" && styles.bulletSpark,
-                f.icon === "x" && styles.bulletX,
-              ]
-                .filter(Boolean)
-                .join(" ")}
-            >
-              <Icon name={f.icon === "x" ? "x" : "check"} size={10} stroke={2.4} />
-            </span>
-            <span className={f.icon === "x" ? styles.featXText : undefined}>{f.text}</span>
-          </div>
-        ))}
-      </div>
-      {cta}
-    </div>
-  );
 }

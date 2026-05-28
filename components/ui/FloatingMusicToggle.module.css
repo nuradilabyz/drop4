@@ -1,7 +1,8 @@
 /* Hidden by default. Only shows under the same mobile breakpoint at which
- * the desktop Nav (and its MusicToggle) goes away. Positioned bottom-right
- * just above the MobileTabBar so it doesn't fight the four tabs for the
- * thumb zone. */
+ * the desktop Nav (and its music + theme toggles) goes away. Positioned
+ * bottom-right just above the MobileTabBar so it doesn't fight the four tabs
+ * for the thumb zone. The two controls (theme + music) stack vertically and
+ * share the same size/elevation so they read as one cluster. */
 .wrap {
   display: none;
 }
@@ -12,6 +13,9 @@
     right: 14px;
     bottom: calc(78px + env(safe-area-inset-bottom, 0px));
     z-index: 40;
-    display: block;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
   }
 }

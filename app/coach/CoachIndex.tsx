@@ -121,7 +121,7 @@ export function CoachIndex() {
               <Chip tone={result.tone} size="md">
                 {result.text}
               </Chip>
-              <Icon name="chevR" size={14} />
+              <Icon name="chevR" size={14} className={styles.chevron} />
             </button>
           </li>
         );

@@ -131,8 +131,10 @@
     gap: 12px;
     padding: 12px 14px;
   }
-  /* Drop the trailing chevron on small screens; the whole row is the target. */
-  .row > svg:last-child {
+  /* Drop the trailing chevron on small screens; the whole row is the target.
+     Uses an explicit class (not svg:last-child) because Turbopack's
+     CSS-Modules pipeline doesn't reliably scope that child/type selector. */
+  .chevron {
     display: none;
   }
 }

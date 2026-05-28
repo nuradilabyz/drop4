@@ -44,12 +44,16 @@ export function MusicToggle({ size = 34, className, src }: MusicToggleProps) {
   }, [src]);
 
   function toggle() {
+    // Branch on ACTUAL audible state, never on preference. The icon paints
+    // red only when isPlaying() is true, so this matches what the user sees:
+    //  - audible  -> they want it off: disable() (persists "off", wins).
+    //  - silent   -> they want sound: enable() unmutes/resumes (and the
+    //    click itself is a valid user gesture, so the browser allows it).
+    // This is the fix for "preferred-on but muted": a tap on a silent toggle
+    // resumes audio instead of flipping the persisted preference to off.
     if (musicPlayer.isPlaying()) {
       musicPlayer.disable();
     } else {
-      // Either kick-starting an armed-but-blocked autoplay (toggle click
-      // itself counts as the user gesture) or un-muting after an explicit
-      // mute. Both flows go through enable().
       musicPlayer.enable(src);
     }
   }

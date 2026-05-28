@@ -491,47 +491,103 @@ export function useDuelGame(opts: UseDuelGameOptions): DuelGameApi {
       }
 
       // 3. Determine our seat.
+      //
+      // Seat claims must be RACE-SAFE: two clients can read the same room row
+      // (both seeing `guest_id === null`) and both try to claim the same seat
+      // (TOCTOU). We never trust the stale in-memory row for a claim — instead
+      // we issue a CONDITIONAL update guarded by `.is(<col>, null)` and inspect
+      // the returned rows. Exactly one row back → we won the seat; zero rows
+      // back → someone beat us to it, so we re-read and fall through.
+      //
+      // `authHostId` / `authGuestId` track the seat occupants we KNOW are
+      // committed (starting from the initial read, updated as we win/lose
+      // races) so downstream phase + match logic stays consistent with the DB.
       let mySeat: Seat;
-      if (spectate) {
-        mySeat = "spectator";
-      } else if (room.host_id === myUid || (!room.host_id && !room.guest_id)) {
-        // Owner of an open room (or an orphaned room we adopt as host).
-        mySeat = "host";
-        if (!room.host_id) {
-          await supabase
-            .from("duel_rooms")
-            .update({ host_id: myUid })
-            .eq("slug", slug);
-        }
-      } else if (room.guest_id === myUid) {
-        mySeat = "guest";
-      } else if (!room.guest_id) {
-        // Open seat → claim it + activate the room + create the match.
-        mySeat = "guest";
-        const { data: match } = await supabase
-          .from("matches")
-          .insert({
-            mode: "duel",
-            // uuid columns: store only real auth uids; guest fallbacks → null.
-            player1_id: asUuid(room.host_id),
-            player2_id: asUuid(myUid),
-            movelist: [],
-          })
-          .select("id")
-          .single();
-        const matchId = match?.id ?? null;
-        matchIdRef.current = matchId;
-        await supabase
+      let authHostId = room.host_id;
+      let authGuestId = room.guest_id;
+
+      // Atomically claim the guest seat (or recognise a reconnect / loss).
+      // Used by both the normal guest path and the host-race-lost fall-through
+      // so the claim is ALWAYS a guarded write, never a stale-read assignment.
+      // Returns the resolved seat and updates `authGuestId` via the returned
+      // value. On a win it creates + attaches the match.
+      const claimGuestSeat = async (): Promise<Seat> => {
+        const { data: claimed } = await supabase
           .from("duel_rooms")
           .update({
             guest_id: myUid,
             status: "active",
-            match_id: matchId,
             last_activity_at: new Date().toISOString(),
           })
-          .eq("slug", slug);
+          .eq("slug", slug)
+          .is("guest_id", null)
+          .select("slug");
+        if (claimed && claimed.length === 1) {
+          // We won the seat → create the match and attach it. Done only after
+          // the seat is ours, so a lost race never leaves a dangling match.
+          authGuestId = myUid;
+          const { data: match } = await supabase
+            .from("matches")
+            .insert({
+              mode: "duel",
+              // uuid columns: store only real auth uids; guests → null.
+              player1_id: asUuid(authHostId),
+              player2_id: asUuid(myUid),
+              movelist: [],
+            })
+            .select("id")
+            .single();
+          const matchId = match?.id ?? null;
+          matchIdRef.current = matchId;
+          await supabase
+            .from("duel_rooms")
+            .update({ match_id: matchId })
+            .eq("slug", slug);
+          return "guest";
+        }
+        // Lost (or never had) the guest seat → re-read to learn the truth.
+        const { data: reread } = await supabase
+          .from("duel_rooms")
+          .select("slug, host_id, guest_id, match_id, status, last_activity_at")
+          .eq("slug", slug)
+          .maybeSingle<RoomRow>();
+        authHostId = reread?.host_id ?? authHostId;
+        authGuestId = reread?.guest_id ?? authGuestId;
+        if (reread?.match_id) matchIdRef.current = reread.match_id;
+        if (authGuestId === myUid) return "guest"; // our own write / reconnect
+        setMessage("Both seats are taken — you're spectating.");
+        return "spectator";
+      };
+
+      if (spectate) {
+        mySeat = "spectator";
+      } else if (room.host_id === myUid) {
+        // Reconnecting host.
+        mySeat = "host";
+      } else if (room.guest_id === myUid) {
+        // Reconnecting guest.
+        mySeat = "guest";
+      } else if (!room.host_id && !room.guest_id) {
+        // Orphaned room → try to adopt it as host with a guarded write.
+        const { data: claimed } = await supabase
+          .from("duel_rooms")
+          .update({ host_id: myUid })
+          .eq("slug", slug)
+          .is("host_id", null)
+          .select("slug");
+        if (claimed && claimed.length === 1) {
+          mySeat = "host";
+          authHostId = myUid;
+        } else {
+          // Lost the host race — the other client is host. Fall through to the
+          // guarded guest claim (the guest seat is the only one left for us).
+          mySeat = await claimGuestSeat();
+        }
+      } else if (!room.guest_id) {
+        // host_id is set (and isn't us); the open guest seat is ours to claim.
+        mySeat = await claimGuestSeat();
       } else {
-        // Both seats taken by others → fall back to spectating.
+        // Both seats taken by others → spectate.
         mySeat = "spectator";
         setMessage("Both seats are taken — you're spectating.");
       }
@@ -554,8 +610,10 @@ export function useDuelGame(opts: UseDuelGameOptions): DuelGameApi {
         }
       }
 
-      // 5. Decide the initial phase.
-      if (mySeat === "host" && !room.guest_id) {
+      // 5. Decide the initial phase. Use the AUTHORITATIVE guest id (what's
+      // actually committed) rather than the stale initial read, so a host
+      // whose guest claimed concurrently lands in "playing", not "waiting".
+      if (mySeat === "host" && !authGuestId) {
         if (phaseRef.current !== "finished") setPhase("waiting");
       } else if (phaseRef.current !== "finished") {
         setPhase("playing");

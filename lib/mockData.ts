@@ -329,7 +329,22 @@ export interface PricingTier {
   checkoutHref: string | null;
   highlighted?: boolean;
   features: PricingFeature[];
+  /**
+   * Optional yearly billing alternative. When present, a monthly/yearly toggle
+   * on the pricing page can swap this tier's price/per/CTA target. Only the Pro
+   * tier ships one today ($36/yr vs $4/mo).
+   */
+  yearly?: {
+    price: string;
+    per: string;
+    checkoutHref: string;
+    /** Short, token-styled savings badge (e.g. "Save 25%"). */
+    savings?: string;
+  };
 }
+
+/** Annual Pro checkout link, advertised as "$36/year". */
+export const PRO_YEARLY_HREF = "/api/stripe/checkout?price=pro_yearly";
 
 export const PRICING_TIERS: PricingTier[] = [
   {
@@ -360,6 +375,12 @@ export const PRICING_TIERS: PricingTier[] = [
     ctaVariant: "primary",
     checkoutHref: "/api/stripe/checkout?price=pro_monthly",
     highlighted: true,
+    yearly: {
+      price: "$36",
+      per: "per year",
+      checkoutHref: PRO_YEARLY_HREF,
+      savings: "Save 25%",
+    },
     features: [
       { icon: "check", text: "Everything in Free, plus" },
       { icon: "spark", text: "Unlimited best-move hints" },
@@ -388,9 +409,6 @@ export const PRICING_TIERS: PricingTier[] = [
     ],
   },
 ];
-
-/** Annual Pro checkout link, advertised as "$36/year". */
-export const PRO_YEARLY_HREF = "/api/stripe/checkout?price=pro_yearly";
 
 export interface ComparisonRow {
   feature: string;

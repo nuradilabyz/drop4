@@ -1,0 +1,85 @@
+/* Shared prose layout for the legal pages (Privacy + Terms). */
+.main {
+  padding: 40px clamp(20px, 5vw, 56px) 80px;
+}
+
+.doc {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.header {
+  padding: clamp(32px, 6vw, 56px) 0 32px;
+  border-bottom: 1px solid var(--border);
+}
+
+.title {
+  font-size: clamp(34px, 6vw, 48px);
+  font-weight: 600;
+  letter-spacing: -1.5px;
+  line-height: 1.04;
+  margin: 0;
+  color: var(--text);
+}
+
+.updated {
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: var(--text-mute);
+}
+
+.intro {
+  margin: 16px 0 0;
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+.section {
+  padding: 32px 0 0;
+}
+
+.h2 {
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  margin: 0 0 12px;
+  color: var(--text);
+}
+
+.section p {
+  margin: 0 0 14px;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text-dim);
+}
+
+.section p:last-child {
+  margin-bottom: 0;
+}
+
+.list {
+  margin: 0 0 14px;
+  padding-left: 20px;
+  list-style: disc;
+}
+
+.list li {
+  margin: 0 0 8px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+
+.list li:last-child {
+  margin-bottom: 0;
+}
+
+.contact {
+  color: var(--coral);
+  text-decoration: none;
+}
+
+.contact:hover {
+  text-decoration: underline;
+}
