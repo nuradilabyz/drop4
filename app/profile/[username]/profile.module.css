@@ -104,6 +104,13 @@
 }
 
 /* ─── Recent matches ────────────────────────────────────────────────────── */
+.emptyState {
+  padding: 22px;
+  font-size: 13px;
+  color: var(--text-mute);
+  line-height: 1.5;
+}
+
 .matchRow {
   display: grid;
   grid-template-columns: 22px 1fr 100px 70px 70px 70px;

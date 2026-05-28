@@ -9,6 +9,7 @@ import { Avatar, Button, Card, Chip, Icon, StatTile } from "@/components/ui";
 import {
   getMockProfile,
   getMockRecentMatches,
+  type Achievement,
   type City,
   type Profile as MockProfile,
   type RecentMatch,
@@ -57,14 +58,45 @@ function relWhen(iso: string): string {
 }
 
 /**
- * Compose the Profile render-model from cloud + mock. Cloud powers the core
- * identity and stats; the things we don't yet store (per-column opening
- * breakdown, named achievements) come from the mock so the page stays full.
+ * The achievement shelf the UI can render. Until we model these in the DB,
+ * we lock everything that can't be derived from `profiles` columns on the
+ * fly — so a brand-new account sees a row of locked badges, not a fake
+ * highlight reel.
  */
-function mergeCloudProfile(cloud: CloudProfile, mock: MockProfile): MockProfile {
-  const winRate = cloud.games > 0 ? Math.round((cloud.wins / cloud.games) * 100) : 0;
+const ACHIEVEMENT_SHELF: Omit<Achievement, "earned">[] = [
+  { icon: "flame", name: "Hot streak", sub: "7 wins", accent: "coral" },
+  { icon: "cup", name: "First win", sub: "vs human", accent: "gold" },
+  { icon: "bolt", name: "Speed demon", sub: "<5min" },
+  { icon: "cpu", name: "AI slayer", sub: "beat Insane", accent: "aqua" },
+  { icon: "target", name: "Sniper", sub: "95% acc" },
+  { icon: "crown", name: "Top 100", sub: "in city" },
+];
+
+function deriveAchievements(cloud: CloudProfile): {
+  list: Achievement[];
+  earnedCount: number;
+} {
+  const earned = new Set<string>();
+  if (cloud.best_streak >= 7) earned.add("Hot streak");
+  if (cloud.wins >= 1) earned.add("First win");
+  // Speed demon / AI slayer / Sniper / Top 100 need separate counters or rank
+  // lookups we don't store yet. Leave them locked rather than fake them.
+  const list = ACHIEVEMENT_SHELF.map((a) => ({ ...a, earned: earned.has(a.name) }));
+  return { list, earnedCount: list.filter((a) => a.earned).length };
+}
+
+/**
+ * Build the Profile render-model from cloud columns only. No mock spread —
+ * a brand-new account must NOT inherit Tigran's openings, achievements, or
+ * the fake "+18 this week" delta. Sections that need data we don't have yet
+ * (ELO history, per-column opening breakdown) render their own empty states.
+ */
+function buildProfileFromCloud(cloud: CloudProfile): MockProfile {
+  const winRate =
+    cloud.games > 0 ? Math.round((cloud.wins / cloud.games) * 100) : 0;
+  const { list: achievements, earnedCount } = deriveAchievements(cloud);
+  const hasGames = cloud.games > 0;
   return {
-    ...mock,
     username: cloud.username,
     name: cloud.display_name ?? cloud.username,
     handle: `@${cloud.username}`,
@@ -72,9 +104,13 @@ function mergeCloudProfile(cloud: CloudProfile, mock: MockProfile): MockProfile 
     joined: fmtJoined(cloud.created_at),
     isPro: cloud.is_pro,
     elo: cloud.elo,
-    eloDelta: mock.eloDelta, // weekly delta needs an elo_snapshots lookup; mock for now
+    eloDelta: "",
     stats: [
-      { label: "ELO", value: String(cloud.elo), sub: mock.eloDelta + " this week" },
+      {
+        label: "ELO",
+        value: String(cloud.elo),
+        sub: hasGames ? "" : "starting rating",
+      },
       {
         label: "Win rate",
         value: `${winRate}%`,
@@ -89,10 +125,14 @@ function mergeCloudProfile(cloud: CloudProfile, mock: MockProfile): MockProfile 
       {
         label: "Favorite opening",
         value: cloud.favorite_col != null ? `col ${cloud.favorite_col + 1}` : "—",
-        sub: mock.stats[3]?.sub ?? "",
+        sub: "",
       },
-      { label: "Avg game", value: fmtMs(cloud.avg_game_ms), sub: mock.stats[4]?.sub ?? "" },
+      { label: "Avg game", value: fmtMs(cloud.avg_game_ms), sub: "" },
     ],
+    openingByColumn: [0, 0, 0, 0, 0, 0, 0],
+    achievements,
+    achievementsEarned: earnedCount,
+    achievementsTotal: achievements.length,
     recentTotal: cloud.games,
   };
 }
@@ -129,12 +169,19 @@ function adaptMatch(m: Match, viewerId: string): RecentMatch {
   };
 }
 
-type ProfileData = { profile: MockProfile; matches: RecentMatch[] };
+type ProfileData = {
+  profile: MockProfile;
+  matches: RecentMatch[];
+  /** Real player with games on record. Cloud-only flag — mock demos default
+   *  to true so the dev/preview render still shows the full layout. */
+  hasPlayed: boolean;
+};
 
 function mockBundle(username: string): ProfileData {
   return {
     profile: getMockProfile(username),
     matches: getMockRecentMatches(username),
+    hasPlayed: true,
   };
 }
 
@@ -169,15 +216,15 @@ async function loadProfileData(username: string): Promise<ProfileData | null> {
   }
   if (!cloud) return null;
 
-  const profile = mergeCloudProfile(cloud, getMockProfile(username));
-  let matches: RecentMatch[] = getMockRecentMatches(username);
+  const profile = buildProfileFromCloud(cloud);
+  let matches: RecentMatch[] = [];
   try {
     const rows = await getRecentMatches(supabase, cloud.id, 8);
-    if (rows.length > 0) matches = rows.map((m) => adaptMatch(m, cloud.id));
+    matches = rows.map((m) => adaptMatch(m, cloud.id));
   } catch {
-    /* keep mock matches — finalized matches list isn't load-bearing */
+    /* swallow — empty matches list is the honest default */
   }
-  return { profile, matches };
+  return { profile, matches, hasPlayed: cloud.games > 0 };
 }
 
 export async function generateMetadata(props: ProfileRouteProps): Promise<Metadata> {
@@ -200,7 +247,7 @@ export default async function ProfilePage(props: ProfileRouteProps) {
   const { username } = await props.params;
   const data = await loadProfileData(username);
   if (!data) notFound();
-  const { profile, matches } = data;
+  const { profile, matches, hasPlayed } = data;
 
   return (
     <>
@@ -256,62 +303,88 @@ export default async function ProfilePage(props: ProfileRouteProps) {
         {/* Body grid */}
         <div className={styles.body}>
           <div className={styles.col}>
-            <Card padded>
-              <EloChart username={profile.username} />
-            </Card>
+            {hasPlayed ? (
+              <Card padded>
+                <EloChart username={profile.username} />
+              </Card>
+            ) : null}
 
             <Card padded={false}>
               <div className={styles.cardHead}>
                 <span className={styles.cardTitle}>Recent matches</span>
                 <span className={styles.cardCount}>{profile.recentTotal} total</span>
               </div>
-              {matches.map((m, i) => (
-                <div
-                  key={i}
-                  className={styles.matchRow}
-                  style={i === matches.length - 1 ? { borderBottom: "none" } : undefined}
-                >
-                  <span className={[styles.result, m.result === "W" ? styles.win : styles.loss].join(" ")}>
-                    {m.result}
-                  </span>
-                  <span className={styles.matchPlayer}>
-                    <Avatar name={m.opponentName} size={24} />
-                    <span className={styles.matchName}>{m.opponentName}</span>
-                    {m.opponentElo !== null && (
-                      <span className={`${styles.matchElo} mono`}>{m.opponentElo}</span>
-                    )}
-                  </span>
-                  <span className={styles.matchMode}>{m.mode}</span>
-                  <span
-                    className="mono"
-                    style={{
-                      fontSize: 12,
-                      color: m.delta.startsWith("+")
-                        ? "var(--success)"
-                        : m.delta.startsWith("−")
-                          ? "var(--danger)"
-                          : "var(--text-mute)",
-                    }}
-                  >
-                    {m.delta}
-                  </span>
-                  <span className={`${styles.matchLen} ${styles.hideSm} mono`}>{m.length}</span>
-                  <span className={`${styles.matchWhen} ${styles.hideSm}`}>{m.when}</span>
+              {matches.length === 0 ? (
+                <div className={styles.emptyState}>
+                  No matches yet. Once you play your first game it will show up
+                  here.
                 </div>
-              ))}
+              ) : (
+                matches.map((m, i) => (
+                  <div
+                    key={i}
+                    className={styles.matchRow}
+                    style={
+                      i === matches.length - 1
+                        ? { borderBottom: "none" }
+                        : undefined
+                    }
+                  >
+                    <span
+                      className={[
+                        styles.result,
+                        m.result === "W" ? styles.win : styles.loss,
+                      ].join(" ")}
+                    >
+                      {m.result}
+                    </span>
+                    <span className={styles.matchPlayer}>
+                      <Avatar name={m.opponentName} size={24} />
+                      <span className={styles.matchName}>{m.opponentName}</span>
+                      {m.opponentElo !== null && (
+                        <span className={`${styles.matchElo} mono`}>
+                          {m.opponentElo}
+                        </span>
+                      )}
+                    </span>
+                    <span className={styles.matchMode}>{m.mode}</span>
+                    <span
+                      className="mono"
+                      style={{
+                        fontSize: 12,
+                        color: m.delta.startsWith("+")
+                          ? "var(--success)"
+                          : m.delta.startsWith("−")
+                            ? "var(--danger)"
+                            : "var(--text-mute)",
+                      }}
+                    >
+                      {m.delta}
+                    </span>
+                    <span className={`${styles.matchLen} ${styles.hideSm} mono`}>
+                      {m.length}
+                    </span>
+                    <span className={`${styles.matchWhen} ${styles.hideSm}`}>
+                      {m.when}
+                    </span>
+                  </div>
+                ))
+              )}
             </Card>
           </div>
 
           <div className={styles.col}>
-            <Card padded>
-              <div className={styles.cardHeadFlat}>
-                <span className={styles.cardTitle}>Opening preference</span>
-                <Chip tone="outline" size="sm">
-                  By column
-                </Chip>
-              </div>
-              <ColumnHeatmap columns={profile.openingByColumn} />
-            </Card>
+            {hasPlayed ? (
+              <Card padded>
+                <div className={styles.cardHeadFlat}>
+                  <span className={styles.cardTitle}>Opening preference</span>
+                  <Chip tone="outline" size="sm">
+                    By column
+                  </Chip>
+                </div>
+                <ColumnHeatmap columns={profile.openingByColumn} />
+              </Card>
+            ) : null}
 
             <Card padded={false}>
               <div className={styles.cardHead}>
@@ -324,7 +397,9 @@ export default async function ProfilePage(props: ProfileRouteProps) {
                 {profile.achievements.map((a) => (
                   <div
                     key={a.name}
-                    className={[styles.achievement, !a.earned && styles.locked].filter(Boolean).join(" ")}
+                    className={[styles.achievement, !a.earned && styles.locked]
+                      .filter(Boolean)
+                      .join(" ")}
                   >
                     <span
                       className={styles.achievementIcon}
