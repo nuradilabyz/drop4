@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { ColumnHeatmap } from "@/components/charts/ColumnHeatmap";
 import { EloChart } from "@/components/charts/EloChart";
 import { Footer } from "@/components/layout/Footer";
@@ -16,6 +17,11 @@ import { createClient } from "@/lib/supabase/server";
 import { getProfileByUsername, getRecentMatches } from "@/lib/db/queries";
 import type { Match, Profile as CloudProfile } from "@/types/database";
 import styles from "./profile.module.css";
+
+const SUPABASE_CONFIGURED = !!(
+  process.env.NEXT_PUBLIC_SUPABASE_URL &&
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 // Next.js 16: route `params` is a Promise (see AGENTS.md). The generated
 // `PageProps<'/profile/[username]'>` global resolves to this same shape once
@@ -123,34 +129,67 @@ function adaptMatch(m: Match, viewerId: string): RecentMatch {
   };
 }
 
-async function loadProfileData(
-  username: string,
-): Promise<{ profile: MockProfile; matches: RecentMatch[] }> {
-  const fallback = {
+type ProfileData = { profile: MockProfile; matches: RecentMatch[] };
+
+function mockBundle(username: string): ProfileData {
+  return {
     profile: getMockProfile(username),
     matches: getMockRecentMatches(username),
   };
+}
+
+/**
+ * Load real profile data from cloud, or signal "doesn't exist" with `null`.
+ *
+ * Strict semantics:
+ *   - Supabase configured + lookup returns null → user really doesn't exist,
+ *     caller should `notFound()`. We MUST NOT silently render the mock
+ *     "tigran" profile under a stranger's URL.
+ *   - Supabase configured + lookup *threw* (network/DB hiccup) → degrade to
+ *     the mock so the page still loads instead of showing a 500 for a real
+ *     user whose backend momentarily blipped.
+ *   - Supabase NOT configured (dev/preview without env vars) → mock so the
+ *     UI is still demoable.
+ */
+async function loadProfileData(username: string): Promise<ProfileData | null> {
+  if (!SUPABASE_CONFIGURED) return mockBundle(username);
+
+  let supabase;
   try {
-    const supabase = await createClient();
-    const cloud = await getProfileByUsername(supabase, username);
-    if (!cloud) return fallback;
-    const profile = mergeCloudProfile(cloud, fallback.profile);
-    let matches = fallback.matches;
-    try {
-      const rows = await getRecentMatches(supabase, cloud.id, 8);
-      if (rows.length > 0) matches = rows.map((m) => adaptMatch(m, cloud.id));
-    } catch {
-      /* keep mock matches */
-    }
-    return { profile, matches };
+    supabase = await createClient();
   } catch {
-    return fallback;
+    return mockBundle(username);
   }
+
+  let cloud: CloudProfile | null;
+  try {
+    cloud = await getProfileByUsername(supabase, username);
+  } catch {
+    return mockBundle(username);
+  }
+  if (!cloud) return null;
+
+  const profile = mergeCloudProfile(cloud, getMockProfile(username));
+  let matches: RecentMatch[] = getMockRecentMatches(username);
+  try {
+    const rows = await getRecentMatches(supabase, cloud.id, 8);
+    if (rows.length > 0) matches = rows.map((m) => adaptMatch(m, cloud.id));
+  } catch {
+    /* keep mock matches — finalized matches list isn't load-bearing */
+  }
+  return { profile, matches };
 }
 
 export async function generateMetadata(props: ProfileRouteProps): Promise<Metadata> {
   const { username } = await props.params;
-  const { profile } = await loadProfileData(username);
+  const data = await loadProfileData(username);
+  if (!data) {
+    return {
+      title: "Profile not found",
+      description: "This player profile doesn't exist on Drop4.",
+    };
+  }
+  const { profile } = data;
   return {
     title: `${profile.name} (${profile.handle})`,
     description: `${profile.name} · ${profile.elo} ELO · ${profile.city}. Match history, ELO trend, and achievements on Drop4.`,
@@ -159,7 +198,9 @@ export async function generateMetadata(props: ProfileRouteProps): Promise<Metada
 
 export default async function ProfilePage(props: ProfileRouteProps) {
   const { username } = await props.params;
-  const { profile, matches } = await loadProfileData(username);
+  const data = await loadProfileData(username);
+  if (!data) notFound();
+  const { profile, matches } = data;
 
   return (
     <>
