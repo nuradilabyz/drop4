@@ -175,6 +175,10 @@ type ProfileData = {
   /** Real player with games on record. Cloud-only flag — mock demos default
    *  to true so the dev/preview render still shows the full layout. */
   hasPlayed: boolean;
+  /** Signed-in viewer is looking at their own profile. Gates Sign-out and
+   *  any future "edit account" actions so they never appear on someone
+   *  else's page. */
+  isOwnProfile: boolean;
 };
 
 function mockBundle(username: string): ProfileData {
@@ -182,6 +186,7 @@ function mockBundle(username: string): ProfileData {
     profile: getMockProfile(username),
     matches: getMockRecentMatches(username),
     hasPlayed: true,
+    isOwnProfile: false,
   };
 }
 
@@ -224,7 +229,20 @@ async function loadProfileData(username: string): Promise<ProfileData | null> {
   } catch {
     /* swallow — empty matches list is the honest default */
   }
-  return { profile, matches, hasPlayed: cloud.games > 0 };
+
+  // Identify the *viewer* (signed-in account, not the route-param subject)
+  // so we can decide whether to surface Sign-out on this page.
+  let isOwnProfile = false;
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user && !user.is_anonymous) isOwnProfile = user.id === cloud.id;
+  } catch {
+    /* not signed in or auth blip — leave isOwnProfile false */
+  }
+
+  return { profile, matches, hasPlayed: cloud.games > 0, isOwnProfile };
 }
 
 export async function generateMetadata(props: ProfileRouteProps): Promise<Metadata> {
@@ -247,7 +265,7 @@ export default async function ProfilePage(props: ProfileRouteProps) {
   const { username } = await props.params;
   const data = await loadProfileData(username);
   if (!data) notFound();
-  const { profile, matches, hasPlayed } = data;
+  const { profile, matches, hasPlayed, isOwnProfile } = data;
 
   return (
     <>
@@ -281,9 +299,18 @@ export default async function ProfilePage(props: ProfileRouteProps) {
             <Button variant="outline" size="md" href="/play" icon={<Icon name="share" size={13} />}>
               Share profile
             </Button>
-            <Button variant="secondary" size="md" href="/play" icon={<Icon name="settings" size={13} />}>
-              Settings
-            </Button>
+            {isOwnProfile && (
+              <form action="/auth/signout" method="post">
+                <Button
+                  type="submit"
+                  variant="secondary"
+                  size="md"
+                  icon={<Icon name="arrow" size={13} />}
+                >
+                  Sign out
+                </Button>
+              </form>
+            )}
           </div>
         </header>
 
