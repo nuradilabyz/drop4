@@ -309,6 +309,14 @@ export function useDuelGame(opts: UseDuelGameOptions): DuelGameApi {
         setWinner(winnerChip);
         setResult(winnerChip);
         setPhase("finished");
+        // Bump the series counter at game-end (not at rematch-acceptance)
+        // so both players see W/L update the instant the win is detected
+        // — the user explicitly flagged the delayed counter as a bug.
+        setSeries((s) =>
+          winnerChip === "c"
+            ? { ...s, c: s.c + 1 }
+            : { ...s, a: s.a + 1 },
+        );
         return;
       }
     }
@@ -396,18 +404,29 @@ export function useDuelGame(opts: UseDuelGameOptions): DuelGameApi {
         setResult(winnerChip);
         setWinLine(null);
         setPhase("finished");
+        setSeries((s) =>
+          winnerChip === "c"
+            ? { ...s, c: s.c + 1 }
+            : { ...s, a: s.a + 1 },
+        );
         return;
       }
 
       if (evt.type === "rematch") {
+        // Stray-event guard: the rematch acceptance handshake echoes back
+        // a second `rematch` event to the offerer, which used to set
+        // `rematchOffered=true` on the *peer* who already accepted. The
+        // peer is now mid-game in "playing" phase, but the stale flag
+        // then leaked into the NEXT game's finished state, lighting up
+        // the Accept banner with no actual offer behind it. Only treat
+        // an incoming offer as real when we're actually at game-over.
         if (evt.accept) {
-          // Opponent accepted our offer (or offered): if we already offered,
-          // start; otherwise mark that an offer is pending our acceptance.
           if (rematchPendingRef.current) {
             startRematch();
-          } else {
+          } else if (phaseRef.current === "finished") {
             setRematchOffered(true);
           }
+          // else: stray ack from a completed handshake — ignore.
         }
         return;
       }
@@ -643,6 +662,9 @@ export function useDuelGame(opts: UseDuelGameOptions): DuelGameApi {
     setResult(oppChip);
     setWinLine(null);
     setPhase("finished");
+    setSeries((s) =>
+      oppChip === "c" ? { ...s, c: s.c + 1 } : { ...s, a: s.a + 1 },
+    );
   }, [phase, myChip]);
 
   // ── Rematch: offer, then both sides reset on acceptance. ──
@@ -660,19 +682,13 @@ export function useDuelGame(opts: UseDuelGameOptions): DuelGameApi {
     void bumpActivity();
   }, [bumpActivity]);
 
-  // Tally the just-finished game into the series before resetting.
-  const tallySeries = useCallback(() => {
-    setSeries((s) => {
-      if (winner === "c") return { ...s, c: s.c + 1 };
-      if (winner === "a") return { ...s, a: s.a + 1 };
-      return s;
-    });
-  }, [winner]);
-
   // Bind the late starter outside render (Compiler rule: no ref writes in render).
+  // Note: the series counter is now bumped at game-end (inside `applyMovelist`
+  // and `resign`), so the rematch handshake only resets state — it doesn't
+  // tally. That's what makes the score update immediately on the winning
+  // move instead of waiting for the rematch handshake to complete.
   useEffect(() => {
     startRematchRef.current = () => {
-      tallySeries();
       // Swap the starter each game so both sides get the first move.
       performReset(hostChipParityRef.current === 0 ? 1 : 0);
       // Tell the peer to start too (acceptance handshake completed).
@@ -682,7 +698,7 @@ export function useDuelGame(opts: UseDuelGameOptions): DuelGameApi {
         accept: true,
       });
     };
-  }, [tallySeries, performReset]);
+  }, [performReset]);
 
   const rematch = useCallback(() => {
     if (phase !== "finished") return;
@@ -730,6 +746,23 @@ export function useDuelGame(opts: UseDuelGameOptions): DuelGameApi {
     });
     return id;
   }, [hostChipParity, seat, name, opponentName, result, movelist]);
+
+  // Auto-persist finished duels to the local matchStore so the Coach tab
+  // (which lists from there) actually finds them. The user reported duel
+  // matches not appearing in history — they only saved when the user
+  // explicitly clicked "Open AI Coach" / "Share win" before now.
+  // Guard by a ref so the same finished game doesn't save twice on
+  // unrelated re-renders.
+  const lastSavedAtRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (phase !== "finished") {
+      lastSavedAtRef.current = null;
+      return;
+    }
+    const ply = movelistRef.current.length;
+    if (lastSavedAtRef.current === ply) return;
+    if (saveForCoach()) lastSavedAtRef.current = ply;
+  }, [phase, saveForCoach]);
 
   return {
     phase,

@@ -265,7 +265,7 @@ function DuelRoomInner({
     ? "Duel · Spectating"
     : `Duel · Casual${game.opponentOnline ? "" : " · opponent offline"}`;
 
-  // Footer: presence + idle countdown + spectator badge.
+  // Footer: presence + idle countdown + spectator badge + leave button.
   const footerSlot = (
     <div className={styles.footer}>
       {isSpectator ? (
@@ -289,60 +289,59 @@ function DuelRoomInner({
           idle {fmtIdle(game.idleMsLeft)}
         </span>
       )}
+      <Button
+        variant="ghost"
+        size="sm"
+        icon={<Icon name="x" size={12} />}
+        onClick={() => router.push("/play")}
+        className={styles.leaveBtn}
+      >
+        Leave duel
+      </Button>
     </div>
   );
 
-  // Rematch banner. Renders on top of the normal footer when there's
-  // pending offer/acceptance state — full-width and color-blocked so the
-  // peer on a phone can't accidentally miss the offer (the previous
-  // single-line hint was too easy to scroll past).
-  const rematchBanner =
+  // Rematch modal. Appears centered with a backdrop the instant a rematch
+  // offer is pending — the user reported the previous footer card was easy
+  // to miss because the eye drops to the win banner over the board, not
+  // below the controls. Spectators don't see this; rematchOffered /
+  // rematchPending are player-only flags resolved by useDuelGame.
+  const rematchModal =
     finished && !isSpectator && (game.rematchOffered || game.rematchPending) ? (
-      <div className={styles.rematchCard} role="status">
-        <span className={styles.rematchCardText}>
-          <Icon
-            name="refresh"
-            size={14}
-            color={game.rematchOffered ? "var(--aqua)" : "var(--text-mute)"}
-          />
-          <span>
+      <div className={styles.rematchOverlay} role="dialog" aria-modal="true">
+        <div className={styles.rematchModal}>
+          <span className={styles.rematchModalIcon} aria-hidden>
+            <Icon name="refresh" size={20} />
+          </span>
+          <h2 className={styles.rematchModalTitle}>
             {game.rematchOffered
               ? `${game.opponentName} wants a rematch`
-              : `Waiting for ${game.opponentName} to accept…`}
-            <span className={styles.rematchCardSub}>
-              {game.rematchOffered
-                ? "Tap below to start a fresh game — the starting colour flips."
-                : "They'll see a prompt and can accept on their end."}
-            </span>
-          </span>
-        </span>
-        {game.rematchOffered && (
-          <span className={styles.rematchCardActions}>
-            <Button
-              variant="coral"
-              size="md"
-              icon={<Icon name="refresh" size={13} />}
-              onClick={game.rematch}
-            >
-              Accept rematch
-            </Button>
-          </span>
-        )}
+              : `Waiting for ${game.opponentName}…`}
+          </h2>
+          <p className={styles.rematchModalSub}>
+            {game.rematchOffered
+              ? "Accept to start a fresh game — the starting colour flips."
+              : "They'll see this prompt and can accept on their end."}
+          </p>
+          {game.rematchOffered && (
+            <div className={styles.rematchModalActions}>
+              <Button
+                variant="coral"
+                size="lg"
+                full
+                icon={<Icon name="refresh" size={15} />}
+                onClick={game.rematch}
+              >
+                Accept rematch
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
     ) : null;
 
   // Board input only for the local player on their turn.
   const canPlay = !isSpectator && game.myTurn && !finished;
-
-  // Footer payload: the prominent rematch card (when applicable) above the
-  // standard presence / idle row. Stacking them keeps the card on the same
-  // surface so spacing/animation stays consistent with the rest of the UI.
-  const composedFooter = (
-    <>
-      {rematchBanner}
-      {footerSlot}
-    </>
-  );
 
   return (
     <>
@@ -355,7 +354,7 @@ function DuelRoomInner({
       banner={banner}
       onResign={isSpectator ? undefined : game.resign}
       onShare={onShare}
-      footerSlot={composedFooter}
+      footerSlot={footerSlot}
       board={{
         cells: game.cells,
         nextPlayer: game.current,
@@ -382,6 +381,7 @@ function DuelRoomInner({
         rematchLabel: game.rematchOffered ? "Accept rematch" : "Rematch",
       }}
     />
+    {rematchModal}
     <Toast message={toast} />
     </>
   );

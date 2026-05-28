@@ -245,42 +245,68 @@
   font-weight: 600;
 }
 
-/* Prominent rematch offer card. Replaces the inline `.rematchHint` text
- * for the two cases that need a clear call to action: opponent has
- * offered (we need to Accept) or we offered (waiting). The card stretches
- * the full footer width so the friend can't miss it on a phone. */
-.rematchCard {
+/* Centered rematch modal. The previous footer card was too easy to miss
+ * — once the game ended the user's eye dropped to the win banner over
+ * the board, not to the row below the controls. A backdrop + middle
+ * card forces the offer into view without being dismissible by accident. */
+.rematchOverlay {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in oklch, var(--bg) 70%, transparent);
+  backdrop-filter: blur(4px);
+  z-index: 50;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 14px;
+  justify-content: center;
+  padding: 24px;
+  animation: drop4-fade-up 0.18s var(--ease) both;
+}
+.rematchModal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 28px 26px;
+  max-width: 380px;
   width: 100%;
-  padding: 14px 16px;
-  border-radius: 14px;
-  border: 1px solid var(--aqua-strong, var(--aqua));
-  background: color-mix(in oklch, var(--aqua) 12%, transparent);
-  font-size: 14px;
-  flex-wrap: wrap;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: center;
 }
-.rematchCardText {
+.rematchModalIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: color-mix(in oklch, var(--aqua) 18%, transparent);
+  color: var(--aqua);
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  color: var(--text);
+  justify-content: center;
+  margin: 0 auto;
+}
+.rematchModalTitle {
+  margin: 0;
+  font-size: 18px;
   font-weight: 600;
-  flex: 1;
-  min-width: 0;
+  letter-spacing: -0.2px;
+  color: var(--text);
 }
-.rematchCardSub {
-  display: block;
-  font-size: 12px;
-  font-weight: 400;
+.rematchModalSub {
+  margin: 0;
+  font-size: 13px;
   color: var(--text-dim);
-  margin-top: 2px;
+  line-height: 1.5;
 }
-.rematchCardActions {
-  display: inline-flex;
-  align-items: center;
+.rematchModalActions {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
-  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+/* Leave-duel button: small ghost button that lives in the footer next
+ * to presence, gives the user a way out of a stuck/unwanted room. */
+.leaveBtn {
+  margin-left: auto;
 }
