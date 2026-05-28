@@ -133,8 +133,10 @@
   }
   /* Drop the trailing chevron on small screens; the whole row is the target.
      Uses an explicit class (not svg:last-child) because Turbopack's
-     CSS-Modules pipeline doesn't reliably scope that child/type selector. */
+     CSS-Modules pipeline doesn't reliably scope that child/type selector.
+     !important is required: the shared Icon component sets an inline
+     `display:inline-block` on the <svg>, which would otherwise win. */
   .chevron {
-    display: none;
+    display: none !important;
   }
 }
