@@ -49,6 +49,18 @@
   box-shadow: none;
 }
 
+/* Override the global `:focus-visible { outline: 2px solid var(--coral) }`
+ * rule from app/globals.css for inputs inside this wrap. The wrap already
+ * draws a coral border on `:focus-within`, so the global outline stacked
+ * on top of it produced the double-rectangle the user saw on
+ * /account/password. Accessibility-wise the wrap's border-color change is
+ * a clear focus indicator, so removing the input's own outline doesn't
+ * cost us anything. */
+.input:focus,
+.input:focus-visible {
+  outline: none;
+}
+
 .lead {
   display: inline-flex;
   align-items: center;
