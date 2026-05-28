@@ -82,20 +82,26 @@ export function SoloGame({
   const finished = game.status === "won" || game.status === "draw";
   const humanTurn = game.status === "playing" && game.current === "c";
 
+  const { message: toast, show: showToast } = useToast();
+
   const onHint = useCallback(() => {
     void game.requestHint();
   }, [game]);
 
-  const onToggleThreats = useCallback(() => {
-    void game.toggleThreats();
-  }, [game]);
+  const onToggleThreats = useCallback(async () => {
+    const result = await game.toggleThreats();
+    if (result === "none") {
+      // Engine found no immediate AI four-in-a-row — give the click visible
+      // feedback so it doesn't feel like a dead button. Budget is preserved
+      // (see toggleThreats).
+      showToast("No finishing moves from the AI right now");
+    }
+  }, [game, showToast]);
 
   const onOpenCoach = useCallback(() => {
     const savedId = game.saveForCoach();
     router.push(`/coach/${savedId}`);
   }, [game, router]);
-
-  const { message: toast, show: showToast } = useToast();
 
   const onShare = useCallback(async () => {
     // Persist the canonical finished record (reuses the coach snapshot path),

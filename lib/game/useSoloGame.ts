@@ -42,6 +42,12 @@ import {
 
 export type SoloStatus = "playing" | "thinking" | "won" | "draw";
 
+/** Outcome of a toggleThreats() call — lets the UI react (e.g. surface a toast
+ *  when the engine found nothing). `"locked"` covers both "budget exhausted"
+ *  and "engine call failed"; the button is already disabled visually in the
+ *  exhausted case so the UI rarely sees this. */
+export type ToggleThreatsResult = "shown" | "none" | "turned-off" | "locked";
+
 const HUMAN: Player = "c";
 const AI: Player = "a";
 
@@ -103,8 +109,11 @@ export interface SoloGameApi extends SoloGameState {
   play: (col: number) => void;
   /** Request the engine's best move (PRO / limited free). Returns the column. */
   requestHint: () => Promise<number | null>;
-  /** Toggle the opponent-threat overlay (consumes a free-tier reveal to turn on). */
-  toggleThreats: () => Promise<void>;
+  /** Toggle the opponent-threat overlay (consumes a free-tier reveal to turn on).
+   *  Returns what happened so the caller can react — `"none"` means the engine
+   *  found no immediate AI four-in-a-row threats, which doesn't burn a reveal
+   *  but is worth surfacing as a toast so the user knows the click registered. */
+  toggleThreats: () => Promise<ToggleThreatsResult>;
   /** Reset the board for the next game; flips the starter. */
   rematch: () => void;
   /** Resign the current game (counts as a loss for the human). */
@@ -404,25 +413,32 @@ export function useSoloGame(opts: UseSoloGameOptions): SoloGameApi {
   const threatsLeft = isPro ? Infinity : Math.max(0, freeThreats - threatsUsed);
   const threatsLocked = !isPro && !threatsOn && threatsLeft <= 0;
 
-  const toggleThreats = useCallback(async () => {
+  const toggleThreats = useCallback(async (): Promise<ToggleThreatsResult> => {
     if (threatsOn) {
       setThreatsOn(false);
       setThreats([]);
-      return;
+      return "turned-off";
     }
-    if (threatsLocked) return;
+    if (threatsLocked) return "locked";
     const engine = engineRef.current;
-    if (!engine) return;
+    if (!engine) return "locked";
     let found: Coord[];
     try {
       // Opponent (aqua) threats against the human.
       found = await engine.getThreats(cells, AI);
     } catch {
-      return;
+      return "locked";
+    }
+    if (found.length === 0) {
+      // No immediate winning moves for the AI — don't burn a reveal on an
+      // empty answer. Let the caller surface a toast so the click still
+      // produces visible feedback.
+      return "none";
     }
     if (!isPro) setThreatsUsed((n) => n + 1);
     setThreatsOn(true);
     setThreats(found);
+    return "shown";
   }, [threatsOn, threatsLocked, cells, isPro]);
 
   // ── Rematch / resign. ──
