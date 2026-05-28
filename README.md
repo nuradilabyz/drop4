@@ -1,95 +1,138 @@
 # Drop4 — *Four in a row. Sharper every drop.*
 
-A modern, competitive web platform for Connect Four. Not another clone — a startup-grade product: play a friend by link, drill against an AI **that explains your mistakes**, climb your **city's** ladder, and go Pro.
+A modern, competitive web platform for **Connect Four**. Not another clone — a startup-grade product: play a friend by link in real time, drill against an AI **that explains your mistakes**, climb your **city's** ladder, solve a daily puzzle, and go Pro.
 
-**Live demo:** **https://drop4-six.vercel.app** · **Repo:** https://github.com/nuradilabyz/drop4
+🔗 **Live:** **https://drop4-six.vercel.app**  ·  💻 **Repo:** https://github.com/nuradilabyz/drop4
 
----
-
-## Что это, для кого и почему ценно
-
-- **Что:** «Четыре в ряд» как живой сервис — Solo против ИИ (4 уровня), Duel по ссылке (реалтайм), Ranked с ELO, городские лидерборды, ежедневные головоломки и **AI-тренер**, который после партии на человеческом языке объясняет, где ты ошибся.
-- **Для кого:** игроки, которые хотят не просто кликать фишки, а **расти** — от новичка до завсегдатая местного рейтинга; и сообщества/клубы/школы (тариф Team).
-- **Почему ценно:** удержание (рейтинги, серии, достижения, daily-пазлы), обучение (AI-тренер — главный дифференциатор), социальный слой (лидерборды по городам — «лучший в Алматы»), и реальная монетизация (Free / Pro $4 / Team $12, Stripe). Это прототип, который может стать сервисом.
-
-This hits the challenge's **Level «Великий»** and goes beyond it: real-time multiplayer, an AI coach, a social/city leaderboard layer, a clear niche, and a working billing flow.
+<sub>Next.js 16 · TypeScript · Supabase (Postgres + Auth + Realtime + RLS) · OpenAI · Stripe · Vercel</sub>
 
 ---
 
-## Feature highlights
+## 🎯 Что это, для кого и почему ценно
 
-| Area | What's built |
-|------|--------------|
-| **Engine** | Bitboard Connect-4 engine (negamax + alpha-beta, transposition table, endgame solver) in a **Web Worker** — instant, zero server cost. Difficulties Easy → Insane. 33 unit tests. |
-| **Solo** | Play vs AI with per-move timers, **best-move hint** (Pro), **threat highlighting**, best-of series, win-line glow, falling-disc animation, resume from where you left off. |
-| **Duel by link** | Share one URL → real-time turn-based match over **Supabase Realtime** (broadcast + presence). Guest play (anonymous auth), reconnection, **spectator mode**, 10-min idle close, rematch. |
-| **AI Coach** 🏆 | Replays the game through the engine → per-move accuracy, blunder/brilliant/fork classification, eval bar, missed-threat detection → then **OpenAI** writes the narrative ("you missed the diagonal threat — col 1 was forced"). Falls back to a deterministic template with no API key. Scrub the whole game move-by-move. |
-| **Social** | ELO, win streaks, achievements, match history, **city leaderboards** (weekly / all-time, monthly reset), profiles with an ELO chart + opening heatmap. |
-| **Monetization** | Free / Pro ($4·mo / $36·yr) / Team ($12·mo) with a real **Stripe** test-mode checkout + webhook → Pro flag. Pro unlocks unlimited hints, full coach, skins, crown badge. |
-| **Creative** | Shareable **OG match-card** images + `/m/<token>` unfurl page, synthesized **sound design** (WebAudio, no assets), daily puzzles, light/dark themes. |
+> *Главная цель — не просто сайт для игры, а продукт, который потенциально может стать настоящим сервисом.*
+
+- **Что это.** «Четыре в ряд» как живой онлайн-сервис: **Solo** против ИИ (4 уровня сложности), **Duel по ссылке** (реалтайм 1-на-1 + зрители), **Ranked** с движением ELO, **городские лидерборды**, ежедневные **головоломки** и — главная фишка — **AI-тренер**, который после партии человеческим языком объясняет, где именно ты ошибся и какой ход был выигрышным.
+
+- **Для кого.** Игроки, которые хотят не просто кликать фишки, а **расти**: от новичка до завсегдатая местного рейтинга. И сообщества — клубы, школы, компании (тариф **Team**), где «четыре в ряд» становится поводом для соревнования.
+
+- **Почему это ценно (и почему может стать сервисом).**
+  - **Удержание** — рейтинг, серии, достижения, дневные пазлы, история матчей.
+  - **Обучение** — AI-тренер превращает поражение в урок. Это ключевой дифференциатор: обычный Connect Four только говорит «ты проиграл», Drop4 говорит **почему**.
+  - **Социальный слой** — лидерборды по городам («лучший в Алматы») создают локальную конкуренцию и виральность через шеринг матч-карточек.
+  - **Реальная монетизация** — Free / Pro ($4·мес или $36·год) / Team ($12·мес) с рабочим Stripe-чекаутом и вебхуком.
+
+Это попадает в уровень **«Великий»** челленджа и идёт дальше: реалтайм-мультиплеер, AI-коуч, социальный city-leaderboard, понятная ниша и работающий биллинг.
 
 ---
 
-## Tech stack
+## ⚡ Попробовать за 60 секунд
 
-- **Next.js 16** (App Router) + **TypeScript**, deployed on **Vercel**
-- **Supabase** — Postgres + Auth (email + password, branded recovery, anonymous guest sign-in for duel guests) + Realtime + Row Level Security
-- **OpenAI** for the AI-coach narration (swappable provider; template fallback)
-- **Stripe** (test mode) for billing
-- Design system ported from a Claude Design export: **CSS custom properties** (light/dark) + **CSS Modules**, Geist / Geist Mono via `next/font`. No UI framework.
+| Хочу… | Куда идти |
+|-------|-----------|
+| Сыграть против ИИ | [/play](https://drop4-six.vercel.app/play) → выбери сложность → **Start training** |
+| Позвать друга | [/play](https://drop4-six.vercel.app/play) → **Create room link** → отправь URL |
+| Решить головоломку дня | [/puzzle/today](https://drop4-six.vercel.app/puzzle/today) |
+| Посмотреть рейтинг города | [/leaderboard](https://drop4-six.vercel.app/leaderboard) |
+| Увидеть разбор от AI-тренера | [/coach](https://drop4-six.vercel.app/coach) (появляется после сыгранной партии) |
+| Тарифы | [/pricing](https://drop4-six.vercel.app/pricing) (переключатель Monthly/Yearly) |
 
-## Architecture at a glance
+---
+
+## ✨ Что внутри
+
+| Область | Что сделано |
+|---------|-------------|
+| **Движок** | Bitboard-движок Connect-4 (negamax + alpha-beta, transposition table, endgame solver) в **Web Worker** — мгновенно и без серверных затрат. Сложности Easy → Insane. |
+| **Solo** | Игра против ИИ с таймерами на ход, **подсказкой лучшего хода** (Pro), **подсветкой угроз**, сериями best-of, свечением выигрышной линии, анимацией падающих фишек, продолжением с места остановки. |
+| **Duel по ссылке** | Один URL → пошаговый матч в реальном времени поверх **Supabase Realtime** (broadcast + presence). Гостевой вход (анонимная авторизация), переподключение, **режим зрителя**, авто-закрытие по простою, реванш. |
+| **AI-тренер** 🏆 | Прогоняет партию через движок → точность по ходам, классификация blunder / brilliant / fork, eval-bar, поиск упущенных угроз → затем **OpenAI** пишет разбор человеческим языком («ты упустил диагональную угрозу — ход в 1-ю колонку был вынужденным»). Без API-ключа работает детерминированный шаблон. Перемотка партии по ходам. |
+| **Социалка** | ELO, серии побед, достижения, история матчей, **городские лидерборды** (за неделю / за всё время, месячный сброс), профили с ELO-графиком и тепловой картой дебютов. |
+| **Монетизация** | Free / Pro ($4·мес / $36·год) / Team ($12·мес) с реальным **Stripe** (test mode) чекаутом + вебхук → Pro-флаг. Pro открывает безлимит подсказок, полного тренера, скины, корону у имени. |
+| **Креатив** | Шеринговые **OG-карточки матчей** + страница-анфолд `/m/<token>`, фоновый lo-fi с честным авто-стартом, ежедневные пазлы, светлая/тёмная темы, самоиграющая доска на лендинге. |
+
+---
+
+## 🧱 Технологии
+
+- **Next.js 16** (App Router) + **TypeScript** — деплой на **Vercel**
+- **Supabase** — Postgres + Auth (email/пароль, брендированное восстановление, анонимный гость для дуэлей) + Realtime + **Row Level Security**
+- **OpenAI** — нарратив AI-тренера (провайдер сменный; есть шаблонный fallback)
+- **Stripe** (test mode) — биллинг (checkout + portal + webhook)
+- **Дизайн-система** — CSS custom properties (light/dark) + **CSS Modules**, шрифты Geist / Geist Mono через `next/font`. Без UI-фреймворков, без Tailwind.
+
+## 🗂 Архитектура
 
 ```
-app/            routes: / play game/[id] r/[slug] coach/[matchId] profile leaderboard
-                pricing puzzle login m/[token] + api/{coach,match/finalize,stripe,og}
-components/     ui/ (Button, Chip, Card, Avatar, Icon, …), board/, game/, coach/, charts/, layout/
-engine/         bitboard, search, eval, threats, solver, analyze, worker, index (+ tests)
-lib/            supabase/, game/, coach/, realtime/, elo, entitlements, sound, share, theme
-supabase/       migrations + seed + config (schema, RLS, leaderboard fn, ELO finalize)
+app/         16 маршрутов: / play game/[id] r/[slug] coach coach/[matchId]
+             profile/[username] leaderboard pricing puzzle/[date] login
+             m/[token] account/password privacy terms playground
+             + api/{coach, match/finalize, stripe/{checkout,portal,webhook}, og}
+             + auth/{callback,signout}, r/new (route handlers)
+components/  ui/ (Button, Chip, Card, Avatar, Icon …) board/ game/ coach/ charts/ layout/ billing/ duel/
+engine/      bitboard · search · eval · threats · solver · analyze · worker · types
+lib/         supabase/ · game/ · coach/ · realtime/ · audio/ · elo · entitlements · share · theme
+supabase/    миграции + seed + config (схема, RLS, leaderboard-функция, ELO-finalize)
 ```
 
-Key design decisions: the engine is **pure & isomorphic** (runs in the worker *and* server-side for the coach + anti-cheat match validation); ELO is written **server-side only** after replaying the movelist (clients can't forge results); the board contract (`cells[col][row]`, `'c'`/`'a'`) is frozen in `engine/types.ts`.
+**Ключевые решения:**
+- Движок **чистый и изоморфный** — крутится и в воркере (игра), и на сервере (тренер + анти-чит валидация матча).
+- **ELO пишется только на сервере** после переигрывания списка ходов — клиент не может подделать результат.
+- Контракт доски (`cells[col][row]`, `'c'`/`'a'`) заморожен в `engine/types.ts`.
+- **Realtime-дуэли:** место гостя занимается **атомарно** (`UPDATE … WHERE guest_id IS NULL`) — гонок за место и «двух гостей» быть не может; третий заходящий становится зрителем.
 
 ---
 
-## Run it locally
+## ✅ Качество
 
-Requires Node 20.9+ and Docker (for local Supabase).
+- **54 unit-теста** (`vitest`): движок, ELO-математика, state-machine аудио. Строгая типизация (`tsc --noEmit`, без `any`).
+- Перед сдачей проект прогонялся **флотом из ~15 параллельных QA-агентов** (headless Playwright): каждая страница и каждая кнопка протестированы отдельно на **desktop и mobile** — цены, навигация, реалтайм-дуэли (3 контекста), чекаут, все API-эндпоинты (0 пятисоток). Найденные баги исправлены и перепроверены вживую на проде.
 
 ```bash
-# 1) Backend (Postgres + Auth + Realtime) — applies migrations + seed
+npx vitest run     # 54 теста
+npx tsc --noEmit   # типы
+```
+
+---
+
+## 🛠 Запуск локально
+
+Нужны Node 20.9+ и Docker (для локального Supabase).
+
+```bash
+# 1) Бэкенд (Postgres + Auth + Realtime) — применит миграции + seed
 supabase start          # CLI: https://supabase.com/docs/guides/cli
 supabase db reset
 
-# 2) Env — .env.local already has the standard local Supabase keys.
-#    Add OPENAI_API_KEY for live coach narration (optional; template works without).
-#    Add STRIPE_* test keys for billing (optional).
+# 2) Env — .env.local уже содержит стандартные ключи локального Supabase.
+#    OPENAI_API_KEY — для живого разбора тренера (опционально; без него работает шаблон).
+#    STRIPE_* (test) — для биллинга (опционально).
 
-# 3) App
+# 3) Приложение
 npm install
 npm run dev             # http://localhost:3000
 ```
 
-Without Docker/Supabase you can still run `npm run dev` and use **Solo play, the AI Coach (template mode), puzzles, and all marketing screens** — those work from the engine + local storage. Auth, duel, and leaderboards need Supabase.
+Без Docker/Supabase всё равно работают **Solo, AI-тренер (шаблонный режим), пазлы и все витрины** — они держатся на движке + localStorage. Авторизация, дуэли и лидерборды требуют Supabase.
 
-### Environment variables (`.env.example`)
-`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PRICE_*`, `NEXT_PUBLIC_SITE_URL`.
+**Переменные окружения** (`.env.example`): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PRICE_*`, `NEXT_PUBLIC_SITE_URL`.
 
-## Tests
+## 🚀 Деплой (Vercel + Supabase)
 
-```bash
-npx vitest run        # engine (33) + ELO (15)
-npx tsc --noEmit      # types
-npm run build         # production build (21 routes)
-```
-
-## Deploy (Vercel + Supabase)
-
-1. **Supabase:** create a hosted project → `supabase link` → `supabase db push` (applies migrations) → enable **Anonymous sign-ins** and **Realtime**. Set Auth redirect URL to `https://<your-domain>/auth/callback`.
-2. **Vercel:** import this repo, set **Root Directory = `drop4`**, add all env vars (use Supabase project keys, OpenAI key, Stripe **test** keys), set `NEXT_PUBLIC_SITE_URL` to the deployed URL.
-3. **Stripe:** point a webhook at `https://<your-domain>/api/stripe/webhook` and copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
+1. **Supabase:** создать hosted-проект → `supabase link` → `supabase db push` → включить **Anonymous sign-ins** и **Realtime**; Auth redirect URL → `https://<домен>/auth/callback`.
+2. **Vercel:** импортировать репозиторий, **Root Directory = `drop4`**, добавить все env (ключи Supabase, OpenAI, Stripe **test**), `NEXT_PUBLIC_SITE_URL` = адрес деплоя.
+3. **Stripe:** вебхук на `https://<домен>/api/stripe/webhook`, секрет → `STRIPE_WEBHOOK_SECRET`.
 
 ---
 
-Built for the nFactorial Connect Four challenge. Design exported from Claude Design (`/screens`, `/tokens.jsx` in the parent folder) and implemented here.
+## 🧭 Roadmap (куда это растёт как сервис)
+
+- **Живой PvP-матчмейкинг** по очереди около твоего ELO (сейчас Ranked — калиброванный бот с честной пометкой).
+- Реальная per-column статистика дебютов в профиле (тепловая карта уже готова к данным).
+- Турниры и клубы (Team-тариф — фундамент).
+- Push-уведомления о ходе соперника в дуэли.
+- Расширение тренера: интерактивные «попробуй лучший ход прямо здесь».
+
+---
+
+<sub>Сделано для челленджа nFactorial по Connect Four. Дизайн экспортирован из Claude Design и реализован здесь. Lo-fi трек — HoliznaCC0 (CC0 1.0). Лицензия — MIT.</sub>
