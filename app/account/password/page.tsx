@@ -1,10 +1,17 @@
 "use client";
 
 /**
- * Set new password. Lands here after the recovery email link goes through
- * /auth/callback — at that point Supabase has handed us a session that's
- * authorized to update the password, but nothing else useful for the
- * user yet. We just need a single form to call `updateUser({ password })`.
+ * Set password (+ display name on first visit). Reached after the
+ * `/auth/callback` exchange — at that point Supabase has handed us a
+ * session authorized to update the user. We treat this page as the
+ * single "finish setting up your account" surface:
+ *   - First visit (display_name still null) → also prompt for a name.
+ *   - Recovery flow (existing user with display_name) → password only.
+ *
+ * The user told us they hated seeing other players show up as "Host" /
+ * "Guest" or as a random username derived from their email. The
+ * display_name set here is what every duel-room header, leaderboard
+ * row, and profile page renders from then on.
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -29,22 +36,42 @@ const RULES: Rule[] = [
   { label: "One digit (0–9)", test: (p) => /\d/.test(p) },
 ];
 
+const NAME_MIN = 2;
+const NAME_MAX = 24;
+
 export default function SetPasswordPage() {
   const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [needsName, setNeedsName] = useState<boolean | null>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
   const [hasSession, setHasSession] = useState<boolean | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  // Guard the form: if the user navigated here without a valid recovery
-  // session (typed the URL manually, or the link expired) there's nothing
-  // for them to update — surface the dead end instead of a silent failure.
+  // Guard the form + decide whether to show the name field. If the user
+  // already has a display_name (recovery flow on an established account)
+  // we keep the page focused on the password — pestering them for a
+  // name they already chose would be annoying.
   useEffect(() => {
     let mounted = true;
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data, error }) => {
+    (async () => {
+      const { data, error } = await supabase.auth.getUser();
       if (!mounted) return;
-      setHasSession(!!data.user && !error);
-    });
+      if (error || !data.user) {
+        setHasSession(false);
+        return;
+      }
+      setHasSession(true);
+      setUserId(data.user.id);
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("id", data.user.id)
+        .maybeSingle();
+      if (!mounted) return;
+      setNeedsName(!profile?.display_name);
+    })();
     return () => {
       mounted = false;
     };
@@ -52,6 +79,9 @@ export default function SetPasswordPage() {
 
   const ruleStates = useMemo(() => RULES.map((r) => r.test(password)), [password]);
   const allRulesMet = ruleStates.every(Boolean);
+  const trimmedName = displayName.trim();
+  const nameOk = trimmedName.length >= NAME_MIN && trimmedName.length <= NAME_MAX;
+  const canSubmit = allRulesMet && (!needsName || nameOk);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -60,17 +90,45 @@ export default function SetPasswordPage() {
       setStatus("error");
       return;
     }
-    setStatus("submitting");
-    setError(null);
-    const supabase = createClient();
-    const { error } = await supabase.auth.updateUser({ password });
-    if (error) {
-      setError(error.message);
+    if (needsName && !nameOk) {
+      setError(
+        `Pick a display name between ${NAME_MIN} and ${NAME_MAX} characters.`,
+      );
       setStatus("error");
       return;
     }
+    setStatus("submitting");
+    setError(null);
+    const supabase = createClient();
+
+    const updateData: { password: string; data?: { display_name: string } } = {
+      password,
+    };
+    if (needsName) updateData.data = { display_name: trimmedName };
+
+    const { error: updateErr } = await supabase.auth.updateUser(updateData);
+    if (updateErr) {
+      setError(updateErr.message);
+      setStatus("error");
+      return;
+    }
+
+    // Mirror display_name onto the public profiles row so server-rendered
+    // surfaces (Nav, leaderboard, duel header) see it without waiting on
+    // a webhook. RLS allows users to update their own row.
+    if (needsName && userId) {
+      const { error: profileErr } = await supabase
+        .from("profiles")
+        .update({ display_name: trimmedName })
+        .eq("id", userId);
+      if (profileErr) {
+        // Non-fatal — the password updated. Surface a soft notice but still
+        // proceed; the user can fix their name from the profile page later.
+        console.warn("[account/password] profile sync failed", profileErr);
+      }
+    }
+
     setStatus("success");
-    // Hard redirect so server-rendered nav picks up the fresh session.
     setTimeout(() => {
       window.location.href = "/";
     }, 900);
@@ -84,7 +142,7 @@ export default function SetPasswordPage() {
             <Logo size={26} />
             <h1 className={styles.title}>Link expired</h1>
             <p className={styles.sub}>
-              This password-reset link is no longer valid. Request a fresh one
+              This link is no longer valid. Sign in (or request a fresh reset)
               from the sign-in page.
             </p>
           </div>
@@ -102,7 +160,7 @@ export default function SetPasswordPage() {
         <div className={styles.card}>
           <div className={styles.head}>
             <Logo size={26} />
-            <h1 className={styles.title}>Password updated</h1>
+            <h1 className={styles.title}>You&apos;re all set</h1>
             <p className={styles.sub}>Signing you in…</p>
           </div>
         </div>
@@ -110,18 +168,37 @@ export default function SetPasswordPage() {
     );
   }
 
+  const heading = needsName
+    ? "Finish setting up your account"
+    : "Choose a new password";
+  const sub = needsName
+    ? "Pick a display name your opponents will see, and a password you'll use to sign in next time."
+    : "Pick something strong. You'll sign in with this from now on.";
+
   return (
     <main className={styles.wrap}>
       <div className={styles.card}>
         <div className={styles.head}>
           <Logo size={26} />
-          <h1 className={styles.title}>Choose a new password</h1>
-          <p className={styles.sub}>
-            Pick something strong. You&apos;ll sign in with this from now on.
-          </p>
+          <h1 className={styles.title}>{heading}</h1>
+          <p className={styles.sub}>{sub}</p>
         </div>
 
         <form className={styles.form} onSubmit={onSubmit}>
+          {needsName && (
+            <Input
+              type="text"
+              required
+              autoComplete="nickname"
+              placeholder="Display name (e.g. Aigerim)"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              maxLength={NAME_MAX}
+              lead={<Icon name="user" size={14} />}
+              autoFocus
+            />
+          )}
+
           <Input
             type="password"
             required
@@ -130,7 +207,7 @@ export default function SetPasswordPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             lead={<Icon name="lock" size={14} />}
-            autoFocus
+            autoFocus={!needsName}
           />
 
           <ul className={styles.rules}>
@@ -158,10 +235,10 @@ export default function SetPasswordPage() {
             size="lg"
             full
             loading={status === "submitting"}
-            disabled={!allRulesMet || hasSession === null}
+            disabled={!canSubmit || hasSession === null || needsName === null}
             iconRight={<Icon name="arrow" size={15} />}
           >
-            Update password
+            {needsName ? "Finish setup" : "Update password"}
           </Button>
 
           {status === "error" && error && (

@@ -106,6 +106,12 @@ export interface DuelGameState {
   opponentOnline: boolean;
   /** Opponent display name (best-effort from presence). */
   opponentName: string;
+  /** Host display name from presence — used by spectators. Falls back to
+   *  "Host" only if presence hasn't synced yet. */
+  hostName: string;
+  /** Guest display name from presence — used by spectators. Falls back to
+   *  "Guest" only if the guest seat hasn't joined yet. */
+  guestName: string;
   /** ms remaining before idle-close; counts down while waiting/playing. */
   idleMsLeft: number;
   /** Series score keyed by chip colour. */
@@ -229,6 +235,19 @@ export function useDuelGame(opts: UseDuelGameOptions): DuelGameApi {
   }, [peers, seat, uid]);
   const opponentOnline = Boolean(opponent?.online);
   const opponentName = opponent?.name ?? (seat === "host" ? "Guest" : "Host");
+
+  // Resolve host + guest names from presence regardless of which seat we
+  // hold (spectators need both; players use this for the win banner). The
+  // generic "Host" / "Guest" fallback only fires before presence has
+  // synced or while a seat is still empty.
+  const hostName = useMemo(
+    () => peers.find((p) => p.seat === "host")?.name ?? "Host",
+    [peers],
+  );
+  const guestName = useMemo(
+    () => peers.find((p) => p.seat === "guest")?.name ?? "Guest",
+    [peers],
+  );
   const spectatorCount = peers.filter((p) => p.seat === "spectator").length;
 
   // ── Resolve the shareable URL once mounted (deferred so it isn't a
@@ -508,22 +527,17 @@ export function useDuelGame(opts: UseDuelGameOptions): DuelGameApi {
         setPhase("playing");
       }
 
-      // 6. Open the realtime channel. Advertise a role-based presence name so
-      // the peer renders a sensible label (we pass our own `name` only if it
-      // was customised away from the "You"/"Watcher" defaults).
-      const presenceName =
-        name && name !== "You" && name !== "Watcher"
-          ? name
-          : mySeat === "host"
-            ? "Host"
-            : mySeat === "guest"
-              ? "Guest"
-              : "Watcher";
+      // 6. Open the realtime channel. We always have a real name now — the
+      // host resolves theirs server-side from `profiles.display_name`, the
+      // guest types one in `GuestNamePrompt` before the room mounts. The
+      // generic "Host"/"Guest"/"Watcher" labels only show up as the
+      // fallback in `hostName`/`guestName` for the brief window before
+      // presence has synced.
       channel = createDuelChannel({
         client: supabase,
         slug,
         uid: myUid,
-        name: presenceName,
+        name: name || (mySeat === "spectator" ? "Watcher" : "Player"),
         seat: mySeat,
       });
       channelRef.current = channel;
@@ -732,6 +746,8 @@ export function useDuelGame(opts: UseDuelGameOptions): DuelGameApi {
     myTurn,
     opponentOnline,
     opponentName,
+    hostName,
+    guestName,
     idleMsLeft,
     series,
     shareUrl,

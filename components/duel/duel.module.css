@@ -50,6 +50,17 @@
   max-width: 38ch;
 }
 
+/* Guest-name picker form: stacks the input + submit, full-width inside the
+ * status card. */
+.nameForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+  margin-top: 8px;
+}
+
 /* ── Shareable link box (mirrors lobby.jsx) ── */
 .linkBox {
   width: 100%;
@@ -232,4 +243,44 @@
   gap: 6px;
   color: var(--aqua);
   font-weight: 600;
+}
+
+/* Prominent rematch offer card. Replaces the inline `.rematchHint` text
+ * for the two cases that need a clear call to action: opponent has
+ * offered (we need to Accept) or we offered (waiting). The card stretches
+ * the full footer width so the friend can't miss it on a phone. */
+.rematchCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--aqua-strong, var(--aqua));
+  background: color-mix(in oklch, var(--aqua) 12%, transparent);
+  font-size: 14px;
+  flex-wrap: wrap;
+}
+.rematchCardText {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+}
+.rematchCardSub {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.rematchCardActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
