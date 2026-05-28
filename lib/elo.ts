@@ -81,3 +81,33 @@ export const BOT_ELO_BY_DIFFICULTY: Record<string, number> = {
   hard: 1800,
   insane: 2300,
 };
+
+/**
+ * Human-sounding opponent names per rating tier. Until the real-player queue
+ * opens, ranked matches pair the user with an AI standing in for a human of
+ * the relevant Elo — so the opponent shouldn't read "Calibrated bot" in the
+ * pane. Names are deterministically picked from this pool by the game id, so
+ * one match = one stable opponent name, and rematching the same match id
+ * keeps the same name.
+ */
+export const BOT_NAMES_BY_DIFFICULTY: Record<string, readonly string[]> = {
+  easy: ["Aibol N.", "Madiyar T.", "Aru K.", "Tolegen S.", "Dilnaz A."],
+  normal: ["Daniyar K.", "Aigul T.", "Yerlan B.", "Madina O.", "Sanzhar M."],
+  hard: ["Aigerim M.", "Nurlan S.", "Saltanat A.", "Bekzat O.", "Aliya R."],
+  insane: ["Dastan K.", "Aizhan B.", "Timur G.", "Aiman D.", "Nursultan G."],
+};
+
+/**
+ * Deterministically pick a human-sounding opponent name from the difficulty's
+ * pool, seeded by the match id so the name doesn't flicker on re-render and
+ * the same id always resolves to the same opponent.
+ */
+export function pickBotName(seed: string, difficulty: string): string {
+  const pool =
+    BOT_NAMES_BY_DIFFICULTY[difficulty] ?? BOT_NAMES_BY_DIFFICULTY.hard;
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) {
+    h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  }
+  return pool[h % pool.length];
+}

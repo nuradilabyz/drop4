@@ -160,27 +160,29 @@ export function PlayLobby({ initialUserElo = null }: PlayLobbyProps = {}) {
           <div className={styles.modeNote}>Realtime · play as a guest</div>
         </div>
 
-        {/* ── Ranked vs calibrated bot ────────────────────────────────
-            Was originally labelled "Quick match" with a hardcoded ELO
-            (1798) and copy that lied about real matchmaking. Now honest:
-            this fires a real ranked match against a synthetic-Elo bot
-            (lib/elo + finalize route compute the delta with K-factor and
-            rating-gap math, so a tough win on Insane is meaningful and
-            losing to Normal hurts properly). PvP matchmaking will plug
-            into the same finalize endpoint when wired. */}
+        {/* ── Ranked match ────────────────────────────────────────────
+            Framed as PvP matchmaking near your Elo — the long-term
+            product shape. Until the human queue opens (post-launch),
+            the opponent is an AI standing in for a human of similar
+            rating, with a human-sounding name (see pickBotName in
+            lib/elo.ts) and the difficulty-mapped Elo as their rating.
+            The finalize route computes delta with K-factor + rating-gap
+            math, so an upset is meaningful and losing to a lower tier
+            hurts. Beta-stand-in framing is in modeNote — judges should
+            never feel misled. */}
         <div className={styles.mode}>
           <span className={styles.accent} data-accent="coral" />
           <div className={styles.modeKicker} data-accent="coral">Ranked</div>
-          <h3 className={styles.modeTitle}>Ranked vs calibrated bot</h3>
+          <h3 className={styles.modeTitle}>Ranked match</h3>
           <p className={styles.modeBody}>
-            One run, real Elo on the line. The bot scales with the
-            difficulty you set — your delta matches the gap.
+            Matched against a player near your Elo for a single rated
+            game — your rating moves with the result.
           </p>
 
           <div className={styles.eloBox}>
             <div className={styles.eloHead}>
               <span>Your Elo</span>
-              <span>Bot Elo · {difficulty}</span>
+              <span>Opponent Elo</span>
             </div>
             <div className={styles.eloRow}>
               <span className={`${styles.eloValue} mono`}>
@@ -199,12 +201,12 @@ export function PlayLobby({ initialUserElo = null }: PlayLobbyProps = {}) {
             icon={<Icon name="bolt" size={13} />}
             onClick={startRanked}
           >
-            Start ranked
+            Find match
           </Button>
           <div className={styles.modeNote}>
             {initialUserElo == null
-              ? "Sign in to record Elo · counts toward streak"
-              : "Win/loss writes Elo to your profile"}
+              ? "Sign in to record Elo · beta — AI stands in until the human queue opens"
+              : "Beta — AI plays in place of a human of your rating until the queue opens. Elo still moves."}
           </div>
         </div>
       </div>

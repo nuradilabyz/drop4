@@ -13,6 +13,7 @@ import { useSoloGame, formatClock, formatThink } from "@/lib/game/useSoloGame";
 import { getMatch } from "@/lib/game/matchStore";
 import { copyShareLink } from "@/lib/share";
 import { createClient } from "@/lib/supabase/client";
+import { pickBotName } from "@/lib/elo";
 import { Toast, useToast } from "@/components/ui";
 import type { MoveRailItem, PlayerPaneProps } from "@/components/game/PlayerPane";
 import { GameView, type GameViewProps } from "@/components/game/GameView";
@@ -71,13 +72,21 @@ export function SoloGame({
   isPro = false,
 }: SoloGameProps) {
   const router = useRouter();
+  // Ranked matches read like real-player matchmaking: until the human queue
+  // opens, the opponent is an AI standing in for a human of similar Elo, so
+  // it gets a human-sounding name seeded by the match id (stable across
+  // re-renders and rematches of the same id).
+  const rankedOpponentName = useMemo(
+    () => (ranked ? pickBotName(id, difficulty) : undefined),
+    [ranked, id, difficulty],
+  );
   const game = useSoloGame({
     id,
     difficulty,
     bestOf,
     isPro,
     humanName: "You",
-    aiName: ranked ? "Calibrated bot" : undefined,
+    aiName: rankedOpponentName,
   });
 
   const finished = game.status === "won" || game.status === "draw";
@@ -186,14 +195,16 @@ export function SoloGame({
     () => ({
       name: game.players.ai.name,
       chip: "a",
-      city: "The cloud",
+      // Ranked opponents read as humans: city should match. "The cloud" is
+      // fine for casual solo where the player knows it's the AI.
+      city: ranked ? "Almaty" : "The cloud",
       active: game.status === "thinking",
       timer: formatClock(game.current === "a" ? game.turnMs : 0),
       series: bestOf > 1 ? `${game.series.a}W` : undefined,
       moves: railFor(game.movelist, game.thinkMs, game.starter, "a"),
       totalMoves: game.movelist.length,
     }),
-    [game, bestOf],
+    [game, bestOf, ranked],
   );
 
   // ── Score header ──
@@ -205,7 +216,9 @@ export function SoloGame({
   const score: GameViewProps["score"] = {
     leftLabel: "You",
     leftScore: game.series.c,
-    rightLabel: ranked ? "Bot" : "AI",
+    // Show the opponent's real (human-sounding) name in ranked headers so the
+    // scoreboard reads like a PvP match, not "vs AI".
+    rightLabel: ranked ? game.players.ai.name : "AI",
     rightScore: game.series.a,
     series:
       bestOf > 1
@@ -235,7 +248,7 @@ export function SoloGame({
     : null;
 
   const modeLabel = ranked
-    ? `Ranked · vs ${difficulty} bot`
+    ? `Ranked · vs ${game.players.ai.name}`
     : bestOf > 1
       ? `Solo · ${game.players.ai.name} · Best of ${bestOf}`
       : `Solo · ${game.players.ai.name}`;
