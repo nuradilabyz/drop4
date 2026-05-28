@@ -117,11 +117,15 @@
 .boardWrap {
   display: flex;
   justify-content: center;
+  /* Definite width so the Board's max-width:100% caps it to the column instead
+     of the column growing to the board's intrinsic size. */
+  width: 100%;
+  min-width: 0;
 }
 
 @media (max-width: 860px) {
   .card {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     justify-items: center;
     text-align: center;
   }
