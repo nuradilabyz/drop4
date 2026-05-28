@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Board } from "@/components/board/Board";
-import { Avatar, Button, Card, Chip, Icon } from "@/components/ui";
+import { Avatar, Button, Card, Chip, Icon, Toast, useToast } from "@/components/ui";
 import { BOARD_COACH } from "@/lib/sampleBoards";
 import { DAILY_PUZZLE } from "@/lib/mockData";
 import type { Difficulty } from "@/engine/types";
@@ -43,6 +43,20 @@ export function PlayLobby() {
   const router = useRouter();
   const [difficulty, setDifficulty] = useState<Difficulty>("hard");
   const [progress, setProgress] = useState<ProgressRecord[]>([]);
+  const { message: toast, show: showToast } = useToast(4200);
+
+  // If /r/new bounced us back (backend unreachable), explain it once and clean
+  // the URL so a refresh doesn't re-fire. Read from location to avoid the
+  // useSearchParams() Suspense requirement.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("duel") === "unavailable") {
+      showToast(
+        "Couldn’t open a duel room — the backend isn’t reachable yet. Try again shortly.",
+      );
+      window.history.replaceState(null, "", "/play");
+    }
+  }, [showToast]);
 
   // Sync the in-progress list from localStorage: once on mount, and whenever
   // another tab writes to storage (e.g. finishing a game elsewhere).
@@ -68,8 +82,9 @@ export function PlayLobby() {
   };
 
   const createRoom = () => {
-    // TODO: duel handled by realtime agent. Route to the room-creation entry;
-    // until that lands, /r/new is a placeholder the duel agent owns.
+    // GET /r/new mints an (anonymous) host + a duel_rooms row, then 303s into
+    // the room. On backend failure it bounces back to /play?duel=unavailable,
+    // which the effect above surfaces as a toast.
     router.push("/r/new");
   };
 
@@ -132,7 +147,7 @@ export function PlayLobby() {
           >
             Create room link
           </Button>
-          <div className={styles.modeNote}>Realtime duel — coming soon</div>
+          <div className={styles.modeNote}>Realtime · play as a guest</div>
         </div>
 
         {/* ── Ranked / Quick match ── */}
@@ -244,6 +259,8 @@ export function PlayLobby() {
           </Button>
         </Card>
       </div>
+
+      <Toast message={toast} />
     </div>
   );
 }

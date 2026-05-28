@@ -86,10 +86,13 @@ export async function GET(request: NextRequest) {
   }
 
   if (!slug) {
-    return NextResponse.json(
-      { error: "Could not create room", details: lastError },
-      { status: 500 },
-    );
+    // Backend unreachable / not yet configured (or anon sign-in + insert both
+    // failed). Don't dump raw JSON on a primary CTA — bounce back to the lobby
+    // with a flag so it can show a friendly "try again shortly" toast.
+    console.error("[/r/new] room creation failed:", lastError);
+    return NextResponse.redirect(`${origin}/play?duel=unavailable`, {
+      status: 303,
+    });
   }
 
   // 303 so the browser follows with a GET to the room page.
