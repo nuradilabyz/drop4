@@ -83,11 +83,19 @@
 
 html {
   height: 100%;
+  /* Lock the page to vertical scrolling only. The tilted hero board, the
+   * absolutely-positioned floating overlay cards, and the demo board on
+   * mobile can all bleed a pixel or two past 100vw on narrow viewports;
+   * any of those is enough for iOS Safari to expose a horizontal scroll
+   * gesture. We don't have any genuinely-wide content on the site so a
+   * blanket overflow-x:hidden is the right call. */
+  overflow-x: hidden;
   -webkit-text-size-adjust: 100%;
 }
 
 body {
   min-height: 100%;
+  overflow-x: hidden;
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);

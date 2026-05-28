@@ -8,22 +8,24 @@
  * the user navigates from / to /play. A module-level singleton survives
  * routing and only stops when the user explicitly toggles.
  *
- * Autoplay note: browsers block audio playback until the user has
- * interacted with the page. We default the *preference* to ON (so a cold
- * visitor sees the toggle lit up once playback actually starts) but call
- * `audio.play()` defensively — if the browser rejects with NotAllowedError
- * we arm a one-shot listener for the first pointerdown / touchstart /
- * keydown anywhere on the page (except on the music toggle itself, which
- * has its own onClick to start playback). On that gesture we retry play
- * and notify subscribers, so the toggle UI flips to its "on" colour the
- * instant audio actually starts. The only way to stay silent is to
- * explicitly hit the mute toggle — that writes "off" to localStorage,
- * which is the one value that wins over default-on.
+ * Autoplay note: every modern browser blocks `play()` on unmuted audio
+ * before the first user interaction. They DO allow muted autoplay,
+ * however — and we exploit that to get as close to real autoplay as a
+ * web page legally can. On a default-on visit we create the audio
+ * element with muted=true, call play() (the browser allows it because
+ * it's silent), and arm a one-shot listener for the first user gesture
+ * (pointerdown/touchstart/keydown/wheel/scroll anywhere on the page,
+ * except on the music toggle itself). On that gesture we just lift the
+ * mute — audio has been quietly running the whole time, so it becomes
+ * audible *instantly* from wherever the loop happens to be, with a soft
+ * fade-in. From the user's seat it feels like the page started playing
+ * the moment they touched the screen. The only path back to silent is
+ * an explicit mute click, which persists "off" and wins over default-on
+ * forever.
  *
- * The `isPlaying` + `subscribe` pair exists so the toggle component can
- * paint based on *actual playback*, not the persisted preference. Earlier
- * versions painted from preference and lied to the user: after a refresh
- * the icon read "on" while audio was actually waiting for a gesture.
+ * `isPlaying` returns true only when audio is **actually audible**
+ * (paused === false AND muted === false). The toggle UI mirrors that so
+ * the icon paints lit up only when the user can actually hear something.
  */
 
 const STORAGE_KEY = "drop4-music";
@@ -38,11 +40,13 @@ const GESTURE_EVENTS: ReadonlyArray<keyof WindowEventMap> = [
   "pointerdown",
   "touchstart",
   "keydown",
+  "wheel",
+  "scroll",
 ];
 
 /** Marker attribute the MusicToggle adds to its <button>. The auto-gesture
  *  listener skips clicks landing on this element so the toggle's own
- *  onClick handler stays in charge of starting playback for that click. */
+ *  onClick handler stays in charge of the unmute/start action. */
 const TOGGLE_ATTR = "data-music-toggle";
 
 type PlayingListener = (playing: boolean) => void;
@@ -50,36 +54,23 @@ type PlayingListener = (playing: boolean) => void;
 class MusicPlayer {
   private audio: HTMLAudioElement | null = null;
   private fadeRaf: number | null = null;
-  /** Set while we're waiting for the first user gesture to start playback. */
-  private gestureArmedSrc: string | null = null;
   private gestureHandler: ((e: Event) => void) | null = null;
   private listeners = new Set<PlayingListener>();
 
-  /**
-   * Should music be on for this visitor?
-   *
-   * Cold visits + anything other than the explicit "off" sentinel return
-   * true. We only stay silent for users who actively muted (`disable()` →
-   * `persist("off")`). This is what lets the page feel like it autoplays
-   * — the first interaction starts the audio and the toggle paints lit up.
-   */
   isPreferredOn(): boolean {
     if (typeof window === "undefined") return false;
     try {
       return window.localStorage.getItem(STORAGE_KEY) !== "off";
     } catch {
-      // Storage disabled (Safari private mode etc.) — fall back to on; the
-      // user can still mute for the session, just nothing persists.
       return true;
     }
   }
 
-  /** True only when the underlying <audio> element is actively playing. */
+  /** True only when audio is actually audible — playing AND not muted. */
   isPlaying(): boolean {
-    return this.audio !== null && !this.audio.paused;
+    return this.audio !== null && !this.audio.paused && !this.audio.muted;
   }
 
-  /** Subscribe to playback-state changes. Returns an unsubscribe fn. */
   subscribe(fn: PlayingListener): () => void {
     this.listeners.add(fn);
     return () => {
@@ -87,38 +78,58 @@ class MusicPlayer {
     };
   }
 
-  /** Begin playback (creating the <audio> on first call). Idempotent. */
+  /**
+   * Start (or kick-start audible) playback. Idempotent. Two cases:
+   *
+   * 1. First call on a cold page: create the <audio>, mark it muted (so
+   *    autoplay policy lets us start), play it silently, and arm a
+   *    one-shot listener to unmute on the first user gesture.
+   * 2. Subsequent call (toggle click, or the gesture handler firing):
+   *    lift the mute / unpause / fade in to default volume.
+   *
+   * Either path persists the preference as "on".
+   */
   enable(src: string): void {
     if (typeof window === "undefined") return;
-    if (!this.audio) {
-      this.audio = new Audio(src);
-      this.audio.loop = true;
-      this.audio.volume = 0;
-      this.audio.preload = "auto";
-    }
     this.persist("on");
 
-    const playPromise = this.audio.play();
-    if (playPromise && typeof playPromise.then === "function") {
-      playPromise.then(
-        () => {
-          this.disarmGesture();
-          this.fade(DEFAULT_VOLUME, FADE_IN_MS);
-          this.notify();
-        },
-        () => {
-          // Autoplay blocked — wait for a user gesture and try again.
-          this.armGesture(src);
-        },
-      );
-    } else {
-      // Legacy sync path — assume success.
-      this.fade(DEFAULT_VOLUME, FADE_IN_MS);
-      this.notify();
+    if (!this.audio) {
+      const a = new Audio(src);
+      a.loop = true;
+      a.preload = "auto";
+      a.muted = true; // Muted autoplay is permitted everywhere.
+      a.volume = DEFAULT_VOLUME;
+      this.audio = a;
+
+      const p = a.play();
+      if (p && typeof p.then === "function") {
+        p.then(
+          () => {
+            // Silently playing. Wait for a gesture to unmute.
+            this.armUnmute();
+            this.notify(); // isPlaying() === false (still muted)
+          },
+          () => {
+            // Even muted autoplay was rejected (extremely rare). Fall back
+            // to the older "wait for gesture then play" model.
+            this.audio = null;
+            this.armColdStart(src);
+          },
+        );
+      } else {
+        // Sync code path — assume success.
+        this.armUnmute();
+        this.notify();
+      }
+      return;
     }
+
+    // Audio already exists. This call comes from the toggle, the gesture
+    // handler, or a re-render. Resume + unmute + fade in.
+    this.unmuteAndPlay();
   }
 
-  /** Fade out + pause. Idempotent. */
+  /** Fade out + pause. Idempotent. Writes preference "off". */
   disable(): void {
     this.persist("off");
     this.disarmGesture();
@@ -129,50 +140,91 @@ class MusicPlayer {
     });
   }
 
-  /**
-   * After an autoplay rejection, listen for the first user gesture anywhere
-   * on the page and retry `enable`. Capture-phase so we win against any
-   * preventDefault/stopPropagation deeper in the tree. We skip clicks that
-   * landed on the music toggle itself — its onClick handler is the proper
-   * place to start playback for that click, and letting both fire would
-   * race (gesture-handler starts music, then onClick reads "playing" and
-   * mutes it again).
-   */
-  private armGesture(src: string): void {
-    if (this.gestureArmedSrc === src) return; // already waiting
+  /** Apply unmute and/or resume on an existing audio element. */
+  private unmuteAndPlay(): void {
+    const a = this.audio;
+    if (!a) return;
     this.disarmGesture();
-    this.gestureArmedSrc = src;
-    const handler = (e: Event) => {
-      const target = e.target;
-      if (
-        target instanceof Element &&
-        target.closest(`[${TOGGLE_ATTR}]`) !== null
-      ) {
-        // Toggle owns this click — bail and let it call enable() itself.
-        return;
+    const wasMuted = a.muted;
+    const wasPaused = a.paused;
+    if (wasMuted) a.muted = false;
+
+    if (wasPaused) {
+      a.volume = 0;
+      const p = a.play();
+      if (p && typeof p.then === "function") {
+        p.then(
+          () => {
+            this.fade(DEFAULT_VOLUME, FADE_IN_MS);
+            this.notify();
+          },
+          () => {
+            // Lost the gesture window — re-arm the cold-start path.
+            this.armColdStart(a.src);
+          },
+        );
+      } else {
+        this.fade(DEFAULT_VOLUME, FADE_IN_MS);
+        this.notify();
       }
-      const saved = this.gestureArmedSrc;
-      this.disarmGesture();
-      // Respect a mute that happened between arming and the gesture.
-      if (!this.isPreferredOn() || !saved) return;
-      this.enable(saved);
-    };
-    this.gestureHandler = handler;
-    for (const ev of GESTURE_EVENTS) {
-      window.addEventListener(ev, handler, { capture: true });
+    } else if (wasMuted) {
+      // Already playing silently — fade in from zero on top of the audible
+      // signal so the lofi swells in instead of snapping to full bed.
+      a.volume = 0;
+      this.fade(DEFAULT_VOLUME, FADE_IN_MS);
+      this.notify();
     }
   }
 
-  private disarmGesture(): void {
-    if (!this.gestureHandler) {
-      this.gestureArmedSrc = null;
-      return;
+  /** First-gesture listener used when we're already playing-but-muted. */
+  private armUnmute(): void {
+    this.disarmGesture();
+    const handler = (e: Event) => {
+      if (this.isOnToggle(e)) return; // toggle's onClick handles it
+      if (!this.isPreferredOn()) {
+        this.disarmGesture();
+        return;
+      }
+      this.unmuteAndPlay();
+    };
+    this.gestureHandler = handler;
+    for (const ev of GESTURE_EVENTS) {
+      window.addEventListener(ev, handler, { capture: true, passive: true });
     }
+  }
+
+  /** Fallback for the (very rare) case where even muted autoplay failed —
+   *  we never created the audio element; recreate it on first gesture. */
+  private armColdStart(src: string): void {
+    this.disarmGesture();
+    const handler = (e: Event) => {
+      if (this.isOnToggle(e)) return;
+      if (!this.isPreferredOn()) {
+        this.disarmGesture();
+        return;
+      }
+      this.disarmGesture();
+      this.enable(src);
+    };
+    this.gestureHandler = handler;
+    for (const ev of GESTURE_EVENTS) {
+      window.addEventListener(ev, handler, { capture: true, passive: true });
+    }
+  }
+
+  private isOnToggle(e: Event): boolean {
+    const t = e.target;
+    return (
+      t instanceof Element && t.closest(`[${TOGGLE_ATTR}]`) !== null
+    );
+  }
+
+  private disarmGesture(): void {
+    if (!this.gestureHandler) return;
     for (const ev of GESTURE_EVENTS) {
       window.removeEventListener(ev, this.gestureHandler, { capture: true });
     }
     this.gestureHandler = null;
-    this.gestureArmedSrc = null;
   }
 
   private notify(): void {
